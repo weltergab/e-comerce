@@ -38,8 +38,11 @@ export async function POST(req: NextRequest) {
       amount: Math.round(amount * 100),
       currency: 'brl',
       description: description.substring(0, 1000),
-      automatic_payment_methods: {
-        enabled: true,
+      payment_method_types: ['card', 'boleto'],
+      payment_method_options: {
+        boleto: {
+          expires_after_days: 3,
+        },
       },
       metadata: {
         userId: user.userId,
