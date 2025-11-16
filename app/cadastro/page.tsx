@@ -116,7 +116,7 @@ function CadastroForm() {
 
           <div className="mt-4 text-center">
             <Link
-              href="/login"
+              href={redirect !== '/' ? `/login?redirect=${redirect}` : '/login'}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
               Já tem conta? Fazer login

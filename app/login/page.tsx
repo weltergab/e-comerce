@@ -99,7 +99,7 @@ function LoginForm() {
 
           <div className="mt-4 text-center">
             <Link
-              href="/cadastro"
+              href={redirect !== '/' ? `/cadastro?redirect=${redirect}` : '/cadastro'}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
               Não tem conta? Criar uma agora
