@@ -2,11 +2,13 @@
 
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Product } from '@/types';
 import { Card, CardImage, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Toast } from '@/components/ui/Toast';
 import { formatCurrency } from '@/lib/utils/format';
 import { useCart } from '@/contexts/CartContext';
 
@@ -16,17 +18,40 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    await addItem(product);
+    setIsAdding(true);
+
+    const success = await addItem(product);
+
+    if (success) {
+      setJustAdded(true);
+      setShowToast(true);
+      setTimeout(() => {
+        setJustAdded(false);
+      }, 2000);
+    }
+
+    setIsAdding(false);
   };
 
   return (
-    <Link href={`/products/${product.id}`}>
-      <Card hover>
-        <CardImage src={product.image} alt={product.name} />
-        <CardContent>
+    <>
+      {showToast && (
+        <Toast
+          message={`${product.name} adicionado ao carrinho!`}
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
+      <Link href={`/products/${product.id}`}>
+        <Card hover>
+          <CardImage src={product.image} alt={product.name} />
+          <CardContent>
           <div className="mb-2">
             <Badge>{product.category}</Badge>
           </div>
@@ -47,13 +72,24 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             onClick={handleAddToCart}
             fullWidth
-            className="mt-4"
-            disabled={product.stock === 0}
+            className={`mt-4 transition-all duration-300 ${
+              justAdded
+                ? 'bg-green-600 hover:bg-green-700 scale-105'
+                : ''
+            }`}
+            disabled={product.stock === 0 || isAdding}
           >
-            {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Sem Estoque'}
+            {isAdding
+              ? 'Adicionando...'
+              : justAdded
+              ? '✓ Adicionado!'
+              : product.stock > 0
+              ? 'Adicionar ao Carrinho'
+              : 'Sem Estoque'}
           </Button>
         </CardContent>
       </Card>
     </Link>
+    </>
   );
 };

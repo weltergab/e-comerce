@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { authenticateRequest } from '@/lib/auth/middleware';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2025-10-29.clover',
 });
 
 export async function POST(req: NextRequest) {
   try {
+    // Verificar autenticação
+    const user = authenticateRequest(req);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Não autenticado' },
+        { status: 401 }
+      );
+    }
+
     const { items } = await req.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -32,6 +42,8 @@ export async function POST(req: NextRequest) {
         enabled: true,
       },
       metadata: {
+        userId: user.userId,
+        userEmail: user.email,
         itemCount: items.length.toString(),
         products: JSON.stringify(items.map((item: any) => ({
           id: item.productId,

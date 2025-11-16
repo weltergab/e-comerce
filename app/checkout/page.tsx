@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { CheckoutForm } from '@/components/checkout/CheckoutForm';
@@ -15,12 +16,19 @@ import { getStripe } from '@/lib/stripe/stripe';
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total } = useCart();
+  const { user, isLoading: authLoading, token } = useAuth();
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (items.length === 0) {
-      setLoading(false);
+    if (items.length === 0 || authLoading) {
+      setLoading(authLoading);
+      return;
+    }
+
+    // Se não está autenticado, redirecionar para login
+    if (!user) {
+      router.push('/login?redirect=/checkout');
       return;
     }
 
@@ -36,7 +44,10 @@ export default function CheckoutPage() {
 
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify({ items: stripeItems }),
         });
 
@@ -55,7 +66,7 @@ export default function CheckoutPage() {
     };
 
     createPaymentIntent();
-  }, [items]);
+  }, [items, user, authLoading, token]);
 
   if (items.length === 0) {
     return (

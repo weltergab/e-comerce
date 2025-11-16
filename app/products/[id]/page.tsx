@@ -17,6 +17,8 @@ export default function ProductPage() {
   const [currentStock, setCurrentStock] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -38,10 +40,17 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (product) {
+      setIsAdding(true);
       const success = await addItem(product, quantity);
+
       if (success) {
-        router.push('/cart');
+        setJustAdded(true);
+        setTimeout(() => {
+          router.push('/cart');
+        }, 1000);
       }
+
+      setIsAdding(false);
     }
   };
 
@@ -94,7 +103,9 @@ export default function ProductPage() {
 
         {/* Product Info */}
         <div className="flex flex-col">
-          <Badge className="w-fit mb-4">{product.category}</Badge>
+          <div className="mb-4">
+            <Badge>{product.category}</Badge>
+          </div>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             {product.name}
@@ -147,10 +158,20 @@ export default function ProductPage() {
           <Button
             onClick={handleAddToCart}
             size="lg"
-            disabled={currentStock === 0}
-            className="mb-4"
+            disabled={currentStock === 0 || isAdding}
+            className={`mb-4 transition-all duration-300 ${
+              justAdded
+                ? 'bg-green-600 hover:bg-green-700 scale-105'
+                : ''
+            }`}
           >
-            {currentStock > 0 ? 'Adicionar ao Carrinho' : 'Sem Estoque'}
+            {isAdding
+              ? 'Adicionando...'
+              : justAdded
+              ? '✓ Adicionado! Redirecionando...'
+              : currentStock > 0
+              ? 'Adicionar ao Carrinho'
+              : 'Sem Estoque'}
           </Button>
 
           <Button
