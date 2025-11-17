@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
       userId: newUser.id,
       email: newUser.email,
       username: newUser.username,
+      isAdmin: newUser.is_admin || false,
     });
 
     return NextResponse.json({
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
         id: newUser.id,
         email: newUser.email,
         username: newUser.username,
+        isAdmin: newUser.is_admin || false,
       },
     });
   } catch (error) {

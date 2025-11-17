@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       id: user.userId,
       email: user.email,
       username: user.username,
+      isAdmin: user.isAdmin || false,
     },
   });
 }

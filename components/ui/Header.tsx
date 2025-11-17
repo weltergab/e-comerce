@@ -39,6 +39,15 @@ export const Header = () => {
                 )}
               </Link>
 
+              {user?.isAdmin && (
+                <Link
+                  href="/admin"
+                  className="text-gray-700 hover:text-blue-600 transition-colors font-medium bg-yellow-100 px-3 py-1 rounded"
+                >
+                  Admin
+                </Link>
+              )}
+
               {user ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-gray-700 text-sm">

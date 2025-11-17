@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       username: user.username,
+      isAdmin: user.is_admin || false,
     });
 
     return NextResponse.json({
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
         id: user.id,
         email: user.email,
         username: user.username,
+        isAdmin: user.is_admin || false,
       },
     });
   } catch (error) {

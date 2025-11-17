@@ -21,11 +21,17 @@ export const Card = ({ children, className = '', hover = false }: CardProps) => 
 export const CardImage = ({ src, alt }: { src: string; alt: string }) => {
   return (
     <div className="w-full h-64 overflow-hidden bg-gray-200">
-      <img
-        src={src}
-        alt={alt}
-        className="w-full h-full object-cover"
-      />
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-gray-400">
+          <span>Sem imagem</span>
+        </div>
+      )}
     </div>
   );
 };

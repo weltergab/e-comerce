@@ -17,3 +17,11 @@ export function authenticateRequest(request: NextRequest): JWTPayload | null {
   }
   return verifyToken(token);
 }
+
+export function authenticateAdmin(request: NextRequest): JWTPayload | null {
+  const user = authenticateRequest(request);
+  if (!user || !user.isAdmin) {
+    return null;
+  }
+  return user;
+}

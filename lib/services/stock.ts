@@ -63,55 +63,40 @@ function initializeStock() {
 }
 
 export async function updateStock(productId: string, quantity: number): Promise<boolean> {
-  initializeStock();
-
   console.log(`\n=== UPDATE STOCK CALLED ===`);
   console.log(`Product ID: ${productId}`);
   console.log(`Quantity to subtract: ${quantity}`);
-  console.log(`Current stock levels:`, stockLevels);
-
-  if (!stockLevels[productId]) {
-    console.error(`❌ Product ${productId} not found in stock levels`);
-    console.log(`Available products:`, Object.keys(stockLevels));
-    return false;
-  }
-
-  const currentStock = stockLevels[productId];
-  const newStock = currentStock - quantity;
-
-  console.log(`Current stock for product ${productId}: ${currentStock}`);
-  console.log(`New stock will be: ${newStock}`);
-
-  if (newStock < 0) {
-    console.error(`❌ Insufficient stock for product ${productId}`);
-    return false;
-  }
-
-  stockLevels[productId] = newStock;
-  console.log(`✅ Stock updated IN MEMORY: Product ${productId} - Old: ${currentStock}, New: ${newStock}`);
-
-  saveStock(stockLevels);
-  console.log(`✅ Stock persisted to file`);
-
-  console.log(`Updated stock levels:`, stockLevels);
 
   try {
-    const stripeProductId = `prod_${productId}`;
+    // Buscar o produto atual do Stripe
+    const product = await stripe.products.retrieve(productId);
+    const currentStock = parseInt(product.metadata?.stock || '0');
+    const newStock = currentStock - quantity;
 
-    await stripe.products.update(stripeProductId, {
+    console.log(`Current stock for product ${productId}: ${currentStock}`);
+    console.log(`New stock will be: ${newStock}`);
+
+    if (newStock < 0) {
+      console.error(`❌ Insufficient stock for product ${productId}`);
+      return false;
+    }
+
+    // Atualizar o estoque no Stripe
+    await stripe.products.update(productId, {
       metadata: {
         stock: newStock.toString(),
       },
     });
 
-    console.log(`✅ Stock updated in Stripe: Product ${stripeProductId} - Stock: ${newStock}`);
+    console.log(`✅ Stock updated in Stripe: Product ${productId} - Old: ${currentStock}, New: ${newStock}`);
+    console.log(`=== UPDATE STOCK COMPLETE ===\n`);
+
+    return true;
   } catch (error) {
-    console.error(`❌ Failed to update Stripe stock for product ${productId}:`, error);
+    console.error(`❌ Failed to update stock for product ${productId}:`, error);
+    console.log(`=== UPDATE STOCK FAILED ===\n`);
+    return false;
   }
-
-  console.log(`=== UPDATE STOCK COMPLETE ===\n`);
-
-  return true;
 }
 
 export async function getStock(productId: string): Promise<number> {
