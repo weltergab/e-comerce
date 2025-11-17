@@ -125,36 +125,70 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Carregando...</div>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        <div className="text-xl" style={{ color: 'var(--color-text)' }}>
+          Carregando...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
       {/* Header */}
-      <header className="bg-white shadow">
+      <header
+        className="shadow-lg"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1
+                className="text-2xl font-bold"
+                style={{ color: 'var(--color-text)' }}
+              >
                 Painel Administrativo
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
                 Bem-vindo, {user?.username}
               </p>
             </div>
             <div className="flex gap-4">
               <button
                 onClick={() => router.push('/')}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                className="px-4 py-2 rounded transition-colors"
+                style={{
+                  color: 'var(--color-textSecondary)',
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--color-textSecondary)';
+                }}
               >
                 Ver Loja
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-4 py-2 rounded transition-colors"
+                style={{
+                  backgroundColor: 'var(--color-error)',
+                  color: 'white',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.9';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
               >
                 Sair
               </button>
@@ -166,10 +200,22 @@ export default function AdminPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Gerenciar Produtos</h2>
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--color-text)' }}>
+            Gerenciar Produtos
+          </h2>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 rounded font-semibold transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-primaryText)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primaryHover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+            }}
           >
             + Novo Produto
           </button>
@@ -188,7 +234,10 @@ export default function AdminPage() {
         </div>
 
         {products.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
+          <div
+            className="text-center py-12"
+            style={{ color: 'var(--color-textMuted)' }}
+          >
             Nenhum produto encontrado. Crie seu primeiro produto!
           </div>
         )}
@@ -236,35 +285,92 @@ function ProductCard({
   const stock = product.metadata?.stock || '0';
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      {product.images[0] && (
+    <div
+      className="rounded-lg shadow-md overflow-hidden transition-all duration-300"
+      style={{
+        backgroundColor: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = `0 10px 20px -5px var(--color-shadow)`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = `0 4px 6px -1px var(--color-shadow)`;
+      }}
+    >
+      {product.images[0] ? (
         <img
           src={product.images[0]}
           alt={product.name}
           className="w-full h-48 object-cover"
         />
+      ) : (
+        <div
+          className="w-full h-48 flex items-center justify-center"
+          style={{
+            backgroundColor: 'var(--color-borderLight)',
+            color: 'var(--color-textMuted)',
+          }}
+        >
+          Sem imagem
+        </div>
       )}
       <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        <h3
+          className="font-semibold text-lg mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
+          {product.name}
+        </h3>
+        <p
+          className="text-sm mb-3 line-clamp-2"
+          style={{ color: 'var(--color-textSecondary)' }}
+        >
           {product.description}
         </p>
         <div className="flex justify-between items-center mb-3">
-          <span className="text-xl font-bold text-green-600">
+          <span
+            className="text-xl font-bold"
+            style={{ color: 'var(--color-success)' }}
+          >
             R$ {price}
           </span>
-          <span className="text-sm text-gray-600">Estoque: {stock}</span>
+          <span className="text-sm" style={{ color: 'var(--color-textMuted)' }}>
+            Estoque: {stock}
+          </span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(product)}
-            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            className="flex-1 px-3 py-2 rounded text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-primaryText)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primaryHover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+            }}
           >
             Editar
           </button>
           <button
             onClick={() => onDelete(product.id)}
-            className="flex-1 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+            className="flex-1 px-3 py-2 rounded text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor: 'var(--color-error)',
+              color: 'white',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '0.9';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
           >
             Excluir
           </button>
@@ -341,14 +447,20 @@ function ProductModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-bold mb-4">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+      <div
+        className="rounded-lg max-w-md w-full p-6"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
           {product ? 'Editar Produto' : 'Novo Produto'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
               Nome do Produto
             </label>
             <input
@@ -358,12 +470,17 @@ function ProductModal({
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+              }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
               Descrição
             </label>
             <textarea
@@ -371,13 +488,18 @@ function ProductModal({
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+              }}
               rows={3}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
               Preço (R$)
             </label>
             <input
@@ -388,12 +510,17 @@ function ProductModal({
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+              }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
               Estoque
             </label>
             <input
@@ -403,12 +530,17 @@ function ProductModal({
               onChange={(e) =>
                 setFormData({ ...formData, stock: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+              }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
               URL da Imagem
             </label>
             <input
@@ -417,7 +549,12 @@ function ProductModal({
               onChange={(e) =>
                 setFormData({ ...formData, images: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+              }}
               placeholder="https://..."
             />
           </div>
@@ -426,14 +563,39 @@ function ProductModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+              className="flex-1 px-4 py-2 rounded font-semibold transition-colors"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surfaceHover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+              }}
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+              className="flex-1 px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'var(--color-primaryText)',
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primaryHover)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                }
+              }}
             >
               {loading ? 'Salvando...' : 'Salvar'}
             </button>

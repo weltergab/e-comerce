@@ -1,6 +1,6 @@
 // Card component - reusable UI component
 
-import { ReactNode } from 'react';
+import { ReactNode, CSSProperties } from 'react';
 
 interface CardProps {
   children: ReactNode;
@@ -9,10 +9,31 @@ interface CardProps {
 }
 
 export const Card = ({ children, className = '', hover = false }: CardProps) => {
-  const hoverStyles = hover ? 'hover:shadow-xl transition-shadow duration-300' : '';
+  const baseStyles: CSSProperties = {
+    backgroundColor: 'var(--color-surface)',
+    borderRadius: '0.75rem',
+    border: '1px solid var(--color-border)',
+    overflow: 'hidden',
+    transition: 'all 0.3s ease',
+  };
 
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden ${hoverStyles} ${className}`}>
+    <div
+      className={className}
+      style={baseStyles}
+      onMouseEnter={(e) => {
+        if (hover) {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = `0 20px 25px -5px ${CSS.escape('var(--color-shadow)')}, 0 10px 10px -5px ${CSS.escape('var(--color-shadow)')}`;
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (hover) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = `0 4px 6px -1px ${CSS.escape('var(--color-shadow)')}, 0 2px 4px -1px ${CSS.escape('var(--color-shadow)')}`;
+        }
+      }}
+    >
       {children}
     </div>
   );
@@ -20,7 +41,10 @@ export const Card = ({ children, className = '', hover = false }: CardProps) => 
 
 export const CardImage = ({ src, alt }: { src: string; alt: string }) => {
   return (
-    <div className="w-full h-64 overflow-hidden bg-gray-200">
+    <div
+      className="w-full h-64 overflow-hidden"
+      style={{ backgroundColor: 'var(--color-borderLight)' }}
+    >
       {src ? (
         <img
           src={src}
@@ -28,7 +52,10 @@ export const CardImage = ({ src, alt }: { src: string; alt: string }) => {
           className="w-full h-full object-cover"
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-gray-400">
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{ color: 'var(--color-textMuted)' }}
+        >
           <span>Sem imagem</span>
         </div>
       )}
@@ -37,5 +64,9 @@ export const CardImage = ({ src, alt }: { src: string; alt: string }) => {
 };
 
 export const CardContent = ({ children, className = '' }: { children: ReactNode; className?: string }) => {
-  return <div className={`p-6 ${className}`}>{children}</div>;
+  return (
+    <div className={`p-6 ${className}`} style={{ color: 'var(--color-text)' }}>
+      {children}
+    </div>
+  );
 };

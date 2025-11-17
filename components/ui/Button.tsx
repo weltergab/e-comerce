@@ -1,6 +1,6 @@
 // Button component following Open/Closed Principle (extensible via variants)
 
-import { ButtonHTMLAttributes, ReactNode } from 'react';
+import { ButtonHTMLAttributes, ReactNode, CSSProperties, useState } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -8,13 +8,6 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
 }
-
-const variants = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-  secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-  outline: 'bg-transparent border-2 border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-};
 
 const sizes = {
   sm: 'px-3 py-1.5 text-sm',
@@ -31,15 +24,57 @@ export const Button = ({
   className = '',
   ...props
 }: ButtonProps) => {
-  const baseStyles = 'font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  const variantStyles = variants[variant];
+  const [isHovered, setIsHovered] = useState(false);
+
+  const getVariantStyles = (): CSSProperties => {
+    const baseStyle: CSSProperties = {
+      transition: 'all 0.2s ease',
+    };
+
+    switch (variant) {
+      case 'primary':
+        return {
+          ...baseStyle,
+          backgroundColor: isHovered && !disabled ? 'var(--color-primaryHover)' : 'var(--color-primary)',
+          color: 'var(--color-primaryText)',
+        };
+      case 'secondary':
+        return {
+          ...baseStyle,
+          backgroundColor: isHovered && !disabled ? 'var(--color-surfaceHover)' : 'var(--color-surface)',
+          color: 'var(--color-text)',
+          border: '1px solid var(--color-border)',
+        };
+      case 'outline':
+        return {
+          ...baseStyle,
+          backgroundColor: isHovered && !disabled ? 'var(--color-surfaceHover)' : 'transparent',
+          color: 'var(--color-primary)',
+          border: '2px solid var(--color-primary)',
+        };
+      case 'danger':
+        return {
+          ...baseStyle,
+          backgroundColor: 'var(--color-error)',
+          color: 'white',
+          opacity: isHovered && !disabled ? 0.9 : 1,
+        };
+      default:
+        return baseStyle;
+    }
+  };
+
+  const baseClasses = 'font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   const sizeStyles = sizes[size];
   const widthStyles = fullWidth ? 'w-full' : '';
 
   return (
     <button
-      className={`${baseStyles} ${variantStyles} ${sizeStyles} ${widthStyles} ${className}`}
+      className={`${baseClasses} ${sizeStyles} ${widthStyles} ${className}`}
+      style={getVariantStyles()}
       disabled={disabled}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...props}
     >
       {children}

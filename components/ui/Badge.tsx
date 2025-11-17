@@ -1,22 +1,47 @@
 // Badge component for displaying categories and status
 
-import { ReactNode } from 'react';
+import { ReactNode, CSSProperties } from 'react';
 
 interface BadgeProps {
   children: ReactNode;
   variant?: 'default' | 'success' | 'warning' | 'error';
 }
 
-const variants = {
-  default: 'bg-gray-100 text-gray-800',
-  success: 'bg-green-100 text-green-800',
-  warning: 'bg-yellow-100 text-yellow-800',
-  error: 'bg-red-100 text-red-800',
-};
-
 export const Badge = ({ children, variant = 'default' }: BadgeProps) => {
+  const getVariantStyles = (): CSSProperties => {
+    switch (variant) {
+      case 'success':
+        return {
+          backgroundColor: 'var(--color-success)',
+          color: 'white',
+          opacity: 0.9,
+        };
+      case 'warning':
+        return {
+          backgroundColor: 'var(--color-warning)',
+          color: 'white',
+          opacity: 0.9,
+        };
+      case 'error':
+        return {
+          backgroundColor: 'var(--color-error)',
+          color: 'white',
+          opacity: 0.9,
+        };
+      default:
+        return {
+          backgroundColor: 'var(--color-accent)',
+          color: 'var(--color-accentText)',
+          opacity: 0.9,
+        };
+    }
+  };
+
   return (
-    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${variants[variant]}`}>
+    <span
+      className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+      style={getVariantStyles()}
+    >
       {children}
     </span>
   );
