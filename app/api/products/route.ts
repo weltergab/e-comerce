@@ -36,6 +36,26 @@ export async function GET(request: NextRequest) {
               currency: defaultPrice.currency,
             };
           }
+        } else {
+          // Se não tem default_price, buscar todos os preços do produto
+          try {
+            const prices = await stripe.prices.list({
+              product: product.id,
+              active: true,
+              limit: 1,
+            });
+
+            if (prices.data.length > 0) {
+              const price = prices.data[0];
+              priceData = {
+                id: price.id,
+                unit_amount: price.unit_amount,
+                currency: price.currency,
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching prices for product:', product.id, error);
+          }
         }
 
         return {

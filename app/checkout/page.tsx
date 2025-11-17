@@ -42,6 +42,8 @@ export default function CheckoutPage() {
           price: item.product.price,
         }));
 
+        console.log('📦 Sending items to create payment intent:', stripeItems);
+
         const response = await fetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
@@ -53,13 +55,24 @@ export default function CheckoutPage() {
 
         const data = await response.json();
 
+        console.log('📥 Response from payment intent API:', data);
+
+        if (!response.ok) {
+          console.error('❌ Error response:', data);
+          alert(`Erro ao criar pagamento: ${data.error || 'Erro desconhecido'}`);
+          return;
+        }
+
         if (data.clientSecret) {
           setClientSecret(data.clientSecret);
+          console.log('✅ Client secret received');
         } else {
-          console.error('No client secret received');
+          console.error('❌ No client secret received, response:', data);
+          alert('Erro: não foi possível inicializar o pagamento. Verifique se os produtos têm preço válido.');
         }
       } catch (error) {
-        console.error('Error creating payment intent:', error);
+        console.error('❌ Error creating payment intent:', error);
+        alert('Erro ao criar pagamento. Tente novamente.');
       } finally {
         setLoading(false);
       }
