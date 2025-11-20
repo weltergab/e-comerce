@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AdminProductCard } from '@/components/admin/AdminProductCard';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
+import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, Image } from 'lucide-react';
 
 interface User {
   id: string;
@@ -201,7 +202,7 @@ export default function AdminPage() {
                     {products.length}
                   </p>
                 </div>
-                <div className="text-4xl">📦</div>
+                <Package className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
               </div>
             </div>
 
@@ -221,7 +222,7 @@ export default function AdminPage() {
                     {products.filter(p => p.stock > 0).length}
                   </p>
                 </div>
-                <div className="text-4xl">✅</div>
+                <CheckCircle className="w-10 h-10" style={{ color: 'var(--color-success)' }} />
               </div>
             </div>
 
@@ -241,7 +242,7 @@ export default function AdminPage() {
                     {products.filter(p => p.stock === 0).length}
                   </p>
                 </div>
-                <div className="text-4xl">⚠️</div>
+                <AlertTriangle className="w-10 h-10" style={{ color: 'var(--color-error)' }} />
               </div>
             </div>
           </div>
@@ -378,133 +379,218 @@ function ProductModal({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+    <div
+      className="fixed inset-0 flex items-center justify-center p-6 z-50"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      onClick={onClose}
+    >
       <div
-        className="rounded-lg max-w-md w-full p-6"
+        className="rounded-lg max-w-2xl w-full p-8 max-h-[85vh] overflow-y-auto"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-background)',
+          border: '2px solid var(--color-borderLight)',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
-          {product ? 'Editar Produto' : 'Novo Produto'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-              Nome do Produto
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
+        <div className="flex justify-between items-start mb-8">
+          <div className="flex items-center gap-3">
+            <div
+              className="p-3 rounded-lg"
               style={{
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text)',
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-borderLight)',
               }}
-            />
+            >
+              <Package className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+                {product ? 'Editar Produto' : 'Novo Produto'}
+              </h2>
+              <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
+                {product ? 'Atualize as informações do produto' : 'Preencha os dados do novo produto'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            type="button"
+            className="text-3xl leading-none transition-colors p-2 rounded-lg"
+            style={{ color: 'var(--color-textSecondary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-error)';
+              e.currentTarget.style.backgroundColor = 'var(--color-surfaceHover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-textSecondary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div
+            className="rounded-lg p-6"
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-borderLight)',
+            }}
+          >
+            <div className="space-y-5">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Tag className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+                  <label className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                    Nome do Produto *
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--color-background)',
+                    border: '1px solid var(--color-borderLight)',
+                    color: 'var(--color-text)',
+                  }}
+                  placeholder="Ex: Camiseta Básica Preta"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+                  <label className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                    Descrição
+                  </label>
+                </div>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--color-background)',
+                    border: '1px solid var(--color-borderLight)',
+                    color: 'var(--color-text)',
+                    resize: 'vertical',
+                  }}
+                  rows={4}
+                  placeholder="Descreva o produto..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="w-4 h-4" style={{ color: 'var(--color-success)' }} />
+                    <label className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                      Preço (R$) *
+                    </label>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
+                    className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--color-background)',
+                      border: '1px solid var(--color-borderLight)',
+                      color: 'var(--color-text)',
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Box className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+                    <label className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                      Estoque *
+                    </label>
+                  </div>
+                  <input
+                    type="number"
+                    required
+                    value={formData.stock}
+                    onChange={(e) =>
+                      setFormData({ ...formData, stock: e.target.value })
+                    }
+                    className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--color-background)',
+                      border: '1px solid var(--color-borderLight)',
+                      color: 'var(--color-text)',
+                    }}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Image className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+                  <label className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                    URL da Imagem
+                  </label>
+                </div>
+                <input
+                  type="url"
+                  value={formData.images}
+                  onChange={(e) =>
+                    setFormData({ ...formData, images: e.target.value })
+                  }
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--color-background)',
+                    border: '1px solid var(--color-borderLight)',
+                    color: 'var(--color-text)',
+                  }}
+                  placeholder="https://exemplo.com/imagem.jpg"
+                />
+                {formData.images && (
+                  <div className="mt-3">
+                    <img
+                      src={formData.images}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-lg"
+                      style={{ border: '1px solid var(--color-borderLight)' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-              Descrição
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text)',
-              }}
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-              Preço (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text)',
-              }}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-              Estoque
-            </label>
-            <input
-              type="number"
-              required
-              value={formData.stock}
-              onChange={(e) =>
-                setFormData({ ...formData, stock: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text)',
-              }}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-              URL da Imagem
-            </label>
-            <input
-              type="url"
-              value={formData.images}
-              onChange={(e) =>
-                setFormData({ ...formData, images: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text)',
-              }}
-              placeholder="https://..."
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 rounded font-semibold transition-colors"
+              className="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors"
               style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-borderLight)',
                 color: 'var(--color-text)',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'var(--color-surfaceHover)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+                e.currentTarget.style.backgroundColor = 'var(--color-background)';
               }}
             >
               Cancelar
@@ -512,7 +598,7 @@ function ProductModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50"
+              className="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'var(--color-primaryText)',
@@ -528,7 +614,7 @@ function ProductModal({
                 }
               }}
             >
-              {loading ? 'Salvando...' : 'Salvar'}
+              {loading ? 'Salvando...' : product ? 'Atualizar Produto' : 'Criar Produto'}
             </button>
           </div>
         </form>

@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { Package, CheckCircle, DollarSign, ShoppingBag, Calendar, FileText, CreditCard, Receipt, ClipboardList, User } from 'lucide-react';
 
 interface Product {
   id: string;
   qty: number;
   price: number;
+  name?: string;
 }
 
 interface Transaction {
@@ -29,6 +31,7 @@ export default function MyOrdersPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [productNames, setProductNames] = useState<Record<string, string>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -39,8 +42,25 @@ export default function MyOrdersPage() {
 
     if (user) {
       loadTransactions();
+      loadProductNames();
     }
   }, [user, authLoading, router]);
+
+  const loadProductNames = async () => {
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        const names: Record<string, string> = {};
+        data.products.forEach((product: any) => {
+          names[product.id] = product.name;
+        });
+        setProductNames(names);
+      }
+    } catch (error) {
+      console.error('Error loading product names:', error);
+    }
+  };
 
   const loadTransactions = async () => {
     const token = localStorage.getItem('auth_token');
@@ -165,7 +185,7 @@ export default function MyOrdersPage() {
                   {transactions.length}
                 </p>
               </div>
-              <div className="text-4xl">📦</div>
+              <Package className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
             </div>
           </div>
 
@@ -185,7 +205,7 @@ export default function MyOrdersPage() {
                   {transactions.filter((t) => t.status === 'succeeded').length}
                 </p>
               </div>
-              <div className="text-4xl">✅</div>
+              <CheckCircle className="w-10 h-10" style={{ color: 'var(--color-success)' }} />
             </div>
           </div>
 
@@ -210,7 +230,7 @@ export default function MyOrdersPage() {
                   )}
                 </p>
               </div>
-              <div className="text-4xl">💰</div>
+              <DollarSign className="w-10 h-10" style={{ color: 'var(--color-success)' }} />
             </div>
           </div>
         </div>
@@ -224,7 +244,7 @@ export default function MyOrdersPage() {
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <div className="text-6xl mb-6">🛍️</div>
+            <ShoppingBag className="w-20 h-20 mb-6 mx-auto" style={{ color: 'var(--color-textMuted)' }} />
             <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text)' }}>
               Você ainda não fez nenhum pedido
             </h2>
@@ -287,19 +307,23 @@ export default function MyOrdersPage() {
                         {getStatusText(transaction.status)}
                       </span>
                     </div>
-                    <p className="text-sm mb-1" style={{ color: 'var(--color-textSecondary)' }}>
-                      📅 {formatDate(transaction.createdAt)}
-                    </p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="w-4 h-4" style={{ color: 'var(--color-textSecondary)' }} />
+                      <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
+                        {formatDate(transaction.createdAt)}
+                      </p>
+                    </div>
                     <p className="text-sm font-medium" style={{ color: 'var(--color-textMuted)' }}>
                       {transaction.products.length} {transaction.products.length === 1 ? 'item' : 'itens'}
                     </p>
                     {transaction.adminNotes && (
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs font-medium px-2 py-1 rounded" style={{
+                        <span className="text-xs font-medium px-2 py-1 rounded flex items-center gap-1" style={{
                           color: 'var(--color-warning)',
                           backgroundColor: `var(--color-warning)20`,
                         }}>
-                          📝 Possui observações
+                          <FileText className="w-3 h-3" />
+                          Possui observações
                         </span>
                       </div>
                     )}
@@ -340,6 +364,7 @@ export default function MyOrdersPage() {
       {selectedTransaction && (
         <TransactionModal
           transaction={selectedTransaction}
+          productNames={productNames}
           onClose={() => setSelectedTransaction(null)}
         />
       )}
@@ -350,9 +375,11 @@ export default function MyOrdersPage() {
 // Transaction Details Modal Component
 function TransactionModal({
   transaction,
+  productNames,
   onClose,
 }: {
   transaction: Transaction;
+  productNames: Record<string, string>;
   onClose: () => void;
 }) {
   const formatCurrency = (amount: number, currency: string) => {
@@ -466,9 +493,12 @@ function TransactionModal({
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-              📋 Informações do Pedido
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <ClipboardList className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                Informações do Pedido
+              </h3>
+            </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2">
                 <span className="font-medium" style={{ color: 'var(--color-textSecondary)' }}>
@@ -505,9 +535,12 @@ function TransactionModal({
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-              🛒 Itens do Pedido ({transaction.products.length})
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <ShoppingBag className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                Itens do Pedido ({transaction.products.length})
+              </h3>
+            </div>
             <div className="space-y-3">
               {transaction.products.map((product, index) => (
                 <div
@@ -520,11 +553,8 @@ function TransactionModal({
                 >
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
-                      <p className="font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-                        Produto
-                      </p>
-                      <p className="font-mono text-sm" style={{ color: 'var(--color-textMuted)' }}>
-                        ID: {product.id}
+                      <p className="font-semibold text-base mb-1" style={{ color: 'var(--color-text)' }}>
+                        {productNames[product.id] || 'Produto'}
                       </p>
                     </div>
                     <div className="text-right">
@@ -553,9 +583,12 @@ function TransactionModal({
                 border: '2px solid var(--color-warning)',
               }}
             >
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-                📝 Observações Importantes
-              </h3>
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-5 h-5" style={{ color: 'var(--color-warning)' }} />
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                  Observações Importantes
+                </h3>
+              </div>
               <div
                 className="p-4 rounded-lg"
                 style={{
@@ -584,9 +617,12 @@ function TransactionModal({
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                    🎫 Pagamento por Boleto
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Receipt className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                    <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                      Pagamento por Boleto
+                    </h3>
+                  </div>
                   <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
                     {transaction.status === 'succeeded'
                       ? 'Boleto pago com sucesso!'
@@ -646,9 +682,12 @@ function TransactionModal({
             }}
           >
             <div className="flex justify-between items-center">
-              <span className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
-                💳 Total do Pedido:
-              </span>
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-6 h-6" style={{ color: 'var(--color-text)' }} />
+                <span className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                  Total do Pedido:
+                </span>
+              </div>
               <span className="text-3xl font-bold" style={{ color: 'var(--color-success)' }}>
                 {formatCurrency(transaction.amount, transaction.currency)}
               </span>

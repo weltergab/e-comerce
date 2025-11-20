@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Package, CheckCircle, DollarSign, ShoppingBag, Calendar, FileText, CreditCard, Receipt, ClipboardList, User } from 'lucide-react';
 
 interface User {
   id: string;
@@ -14,6 +15,7 @@ interface Product {
   id: string;
   qty: number;
   price: number;
+  name?: string;
 }
 
 interface Transaction {
@@ -39,11 +41,29 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [productNames, setProductNames] = useState<Record<string, string>>({});
   const router = useRouter();
 
   useEffect(() => {
     checkAuth();
+    loadProductNames();
   }, []);
+
+  const loadProductNames = async () => {
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        const names: Record<string, string> = {};
+        data.products.forEach((product: any) => {
+          names[product.id] = product.name;
+        });
+        setProductNames(names);
+      }
+    } catch (error) {
+      console.error('Error loading product names:', error);
+    }
+  };
 
   const checkAuth = async () => {
     const token = localStorage.getItem('auth_token');
@@ -353,6 +373,7 @@ export default function TransactionsPage() {
       {selectedTransaction && (
         <TransactionModal
           transaction={selectedTransaction}
+          productNames={productNames}
           onClose={() => setSelectedTransaction(null)}
           onUpdate={loadTransactions}
         />
@@ -364,10 +385,12 @@ export default function TransactionsPage() {
 // Transaction Details Modal Component
 function TransactionModal({
   transaction,
+  productNames,
   onClose,
   onUpdate,
 }: {
   transaction: Transaction;
+  productNames: Record<string, string>;
   onClose: () => void;
   onUpdate?: () => void;
 }) {
@@ -515,9 +538,12 @@ function TransactionModal({
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-              📋 Informações do Pedido
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <ClipboardList className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                Informações do Pedido
+              </h3>
+            </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2">
                 <span className="font-medium" style={{ color: 'var(--color-textSecondary)' }}>
@@ -554,9 +580,12 @@ function TransactionModal({
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-              👤 Informações do Cliente
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <User className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                Informações do Cliente
+              </h3>
+            </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2">
                 <span className="font-medium" style={{ color: 'var(--color-textSecondary)' }}>
@@ -582,9 +611,12 @@ function TransactionModal({
             }}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-                📝 Notas do Administrador
-              </h3>
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                  Notas do Administrador
+                </h3>
+              </div>
               {!isEditingNotes && (
                 <button
                   onClick={() => setIsEditingNotes(true)}
@@ -689,10 +721,13 @@ function TransactionModal({
                       </p>
                     </div>
                     {transaction.adminNotesUpdatedAt && (
-                      <p className="text-xs" style={{ color: 'var(--color-textMuted)' }}>
-                        📅 Última atualização: {formatDate(transaction.adminNotesUpdatedAt)}
-                        {transaction.adminNotesUpdatedBy && ` • por ${transaction.adminNotesUpdatedBy}`}
-                      </p>
+                      <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-textMuted)' }}>
+                        <Calendar className="w-3 h-3" />
+                        <p>
+                          Última atualização: {formatDate(transaction.adminNotesUpdatedAt)}
+                          {transaction.adminNotesUpdatedBy && ` • por ${transaction.adminNotesUpdatedBy}`}
+                        </p>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -712,9 +747,12 @@ function TransactionModal({
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-              🛒 Itens do Pedido ({transaction.products.length})
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <ShoppingBag className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                Itens do Pedido ({transaction.products.length})
+              </h3>
+            </div>
             <div className="space-y-3">
               {transaction.products.map((product, index) => (
                 <div
@@ -727,10 +765,10 @@ function TransactionModal({
                 >
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
-                      <p className="font-medium mb-1" style={{ color: 'var(--color-text)' }}>
-                        Produto
+                      <p className="font-semibold text-base mb-1" style={{ color: 'var(--color-text)' }}>
+                        {productNames[product.id] || 'Produto'}
                       </p>
-                      <p className="font-mono text-sm" style={{ color: 'var(--color-textMuted)' }}>
+                      <p className="font-mono text-xs" style={{ color: 'var(--color-textMuted)' }}>
                         ID: {product.id}
                       </p>
                     </div>
@@ -762,9 +800,12 @@ function TransactionModal({
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                    🎫 Pagamento por Boleto
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Receipt className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                    <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                      Pagamento por Boleto
+                    </h3>
+                  </div>
                   <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
                     {transaction.status === 'succeeded'
                       ? 'Boleto pago com sucesso!'
@@ -807,9 +848,12 @@ function TransactionModal({
             }}
           >
             <div className="flex justify-between items-center">
-              <span className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
-                💳 Total do Pedido:
-              </span>
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-6 h-6" style={{ color: 'var(--color-text)' }} />
+                <span className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                  Total do Pedido:
+                </span>
+              </div>
               <span className="text-3xl font-bold" style={{ color: 'var(--color-success)' }}>
                 {formatCurrency(transaction.amount, transaction.currency)}
               </span>
