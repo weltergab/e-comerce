@@ -1,10 +1,13 @@
 // Button component following Open/Closed Principle (extensible via variants)
 
+'use client';
+
 import { ButtonHTMLAttributes, ReactNode, CSSProperties, useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
 }
@@ -25,6 +28,7 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { isMinimalTheme } = useTheme();
 
   const getVariantStyles = (): CSSProperties => {
     const baseStyle: CSSProperties = {
@@ -43,7 +47,7 @@ export const Button = ({
           ...baseStyle,
           backgroundColor: isHovered && !disabled ? 'var(--color-surfaceHover)' : 'var(--color-surface)',
           color: 'var(--color-text)',
-          border: '1px solid var(--color-border)',
+          border: isMinimalTheme ? '1px solid var(--color-text)' : '1px solid var(--color-border)',
         };
       case 'outline':
         return {
@@ -59,12 +63,20 @@ export const Button = ({
           color: 'white',
           opacity: isHovered && !disabled ? 0.9 : 1,
         };
+      case 'ghost':
+        return {
+          ...baseStyle,
+          backgroundColor: 'transparent',
+          color: 'var(--color-text)',
+          border: 'none',
+        };
       default:
         return baseStyle;
     }
   };
 
-  const baseClasses = 'font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const roundedClass = isMinimalTheme ? '' : 'rounded-lg';
+  const baseClasses = `font-semibold ${roundedClass} focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed`;
   const sizeStyles = sizes[size];
   const widthStyles = fullWidth ? 'w-full' : '';
 

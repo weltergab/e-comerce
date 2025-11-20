@@ -6,11 +6,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Product } from '@/types';
 import { Card, CardImage, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Toast } from '@/components/ui/Toast';
 import { formatCurrency } from '@/lib/utils/format';
 import { useCart } from '@/contexts/CartContext';
+import { AddToCartButton } from './AddToCartButton';
 
 interface ProductCardProps {
   product: Product;
@@ -18,25 +18,15 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
-  const [isAdding, setIsAdding] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsAdding(true);
-
+  const handleAddToCart = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     const success = await addItem(product);
 
     if (success) {
-      setJustAdded(true);
       setShowToast(true);
-      setTimeout(() => {
-        setJustAdded(false);
-      }, 2000);
     }
-
-    setIsAdding(false);
   };
 
   return (
@@ -61,45 +51,37 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             >
               {product.name}
             </h3>
-            <p
-              className="text-sm mb-4 line-clamp-2"
-              style={{ color: 'var(--color-textSecondary)' }}
-            >
-              {product.description}
-            </p>
-            <div className="flex items-center justify-between mb-4">
-              <span
-                className="text-2xl font-bold"
-                style={{ color: 'var(--color-primary)' }}
-              >
-                {formatCurrency(product.price)}
-              </span>
-              <span
-                className="text-sm"
-                style={{ color: 'var(--color-textMuted)' }}
-              >
-                Estoque: {product.stock}
-              </span>
+            {/* Descrição com altura fixa para manter alinhamento */}
+            <div className="h-12 mb-4">
+              {product.description && (
+                <p
+                  className="text-sm line-clamp-2"
+                  style={{ color: 'var(--color-textSecondary)' }}
+                >
+                  {product.description}
+                </p>
+              )}
             </div>
-            <div className="mt-auto">
-              <Button
-                onClick={handleAddToCart}
-                fullWidth
-                className={`transition-all duration-300 ${
-                  justAdded
-                    ? 'bg-green-600 hover:bg-green-700 scale-105'
-                    : ''
-                }`}
-                disabled={product.stock === 0 || isAdding}
-              >
-                {isAdding
-                  ? 'Adicionando...'
-                  : justAdded
-                  ? '✓ Adicionado!'
-                  : product.stock > 0
-                  ? 'Adicionar ao Carrinho'
-                  : 'Sem Estoque'}
-              </Button>
+            <div className="mt-auto space-y-4">
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-2xl font-bold"
+                  style={{ color: 'var(--color-primary)' }}
+                >
+                  {formatCurrency(product.price)}
+                </span>
+                <span
+                  className="text-sm"
+                  style={{ color: 'var(--color-textMuted)' }}
+                >
+                  Estoque: {product.stock}
+                </span>
+              </div>
+              <AddToCartButton
+                onAddToCart={handleAddToCart}
+                disabled={product.stock === 0}
+                size="sm"
+              />
             </div>
           </CardContent>
         </Card>

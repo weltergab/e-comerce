@@ -8,18 +8,19 @@ interface ThemeContextType {
   theme: Theme;
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
+  isMinimalTheme: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('light1');
-  const [theme, setTheme] = useState<Theme>(getTheme('light1'));
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('light3');
+  const [theme, setTheme] = useState<Theme>(getTheme('light3'));
 
   // Load theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as ThemeMode;
-    if (savedTheme && ['light1', 'light2', 'dark1', 'dark2'].includes(savedTheme)) {
+    if (savedTheme && ['light3', 'dark2'].includes(savedTheme)) {
       setThemeModeState(savedTheme);
       setTheme(getTheme(savedTheme));
     }
@@ -39,8 +40,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [theme]);
 
+  const isMinimalTheme = themeMode === 'light3';
+
   return (
-    <ThemeContext.Provider value={{ theme, themeMode, setThemeMode }}>
+    <ThemeContext.Provider value={{ theme, themeMode, setThemeMode, isMinimalTheme }}>
       {children}
     </ThemeContext.Provider>
   );

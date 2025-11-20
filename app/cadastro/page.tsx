@@ -47,91 +47,103 @@ function CadastroForm() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
-        <p className="text-gray-600">Cadastre-se para finalizar sua compra</p>
-      </div>
+    <div className="min-h-screen flex items-start justify-center px-4" style={{ backgroundColor: 'var(--color-background)' }}>
+      <div className="max-w-md w-full py-20">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>Criar Conta</h1>
+          <p style={{ color: 'var(--color-textSecondary)' }}>Cadastre-se para finalizar sua compra</p>
+        </div>
 
-      <Card>
-        <CardContent className="p-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
+        <Card>
+          <CardContent className="p-6">
+            {error && (
+              <div className="px-4 py-3 rounded-lg mb-4" style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: 'var(--color-error)'
+              }}>
+                {error}
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
+                  Username
+                </label>
+                <Input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                  placeholder="seuusername"
+                  required
+                  disabled={isLoading}
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--color-textMuted)' }}>
+                  Apenas letras e números, sem espaços ou acentos
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>
+                  Senha
+                </label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                fullWidth
                 disabled={isLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <Input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                placeholder="seuusername"
-                required
-                disabled={isLoading}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Apenas letras e números, sem espaços ou acentos
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Senha
-              </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                required
-                disabled={isLoading}
-              />
-            </div>
+              >
+                {isLoading ? 'Criando conta...' : 'Criar Conta'}
+              </Button>
+            </form>
 
-            <Button
-              type="submit"
-              fullWidth
-              disabled={isLoading}
-            >
-              {isLoading ? 'Criando conta...' : 'Criar Conta'}
-            </Button>
-          </form>
+            <div className="mt-4 text-center">
+              <Link
+                href={redirect !== '/' ? `/login?redirect=${redirect}` : '/login'}
+                className="text-sm font-medium transition-colors"
+                style={{ color: 'var(--color-primary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Já tem conta? Fazer login
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="mt-4 text-center">
-            <Link
-              href={redirect !== '/' ? `/login?redirect=${redirect}` : '/login'}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              Já tem conta? Fazer login
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="text-center mt-6">
-        <Link
-          href="/"
-          className="text-gray-600 hover:text-blue-600 text-sm"
-        >
-          ← Voltar para a loja
-        </Link>
+        <div className="text-center mt-6">
+          <Link
+            href="/"
+            className="text-sm transition-colors"
+            style={{ color: 'var(--color-textSecondary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-textSecondary)'}
+          >
+            ← Voltar para a loja
+          </Link>
+        </div>
       </div>
     </div>
   );

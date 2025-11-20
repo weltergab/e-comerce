@@ -1,6 +1,9 @@
 // Card component - reusable UI component
 
+'use client';
+
 import { ReactNode, CSSProperties } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface CardProps {
   children: ReactNode;
@@ -9,10 +12,12 @@ interface CardProps {
 }
 
 export const Card = ({ children, className = '', hover = false }: CardProps) => {
+  const { isMinimalTheme } = useTheme();
+
   const baseStyles: CSSProperties = {
     backgroundColor: 'var(--color-surface)',
-    borderRadius: '0.75rem',
-    border: '1px solid var(--color-border)',
+    borderRadius: isMinimalTheme ? '0' : '0.75rem',
+    border: isMinimalTheme ? 'none' : '1px solid var(--color-border)',
     overflow: 'hidden',
     transition: 'all 0.3s ease',
   };
@@ -23,14 +28,18 @@ export const Card = ({ children, className = '', hover = false }: CardProps) => 
       style={baseStyles}
       onMouseEnter={(e) => {
         if (hover) {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = `0 20px 25px -5px ${CSS.escape('var(--color-shadow)')}, 0 10px 10px -5px ${CSS.escape('var(--color-shadow)')}`;
+          e.currentTarget.style.transform = isMinimalTheme ? 'translateY(-2px)' : 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = isMinimalTheme
+            ? `0 4px 8px ${CSS.escape('var(--color-shadow)')}`
+            : `0 20px 25px -5px ${CSS.escape('var(--color-shadow)')}, 0 10px 10px -5px ${CSS.escape('var(--color-shadow)')}`;
         }
       }}
       onMouseLeave={(e) => {
         if (hover) {
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = `0 4px 6px -1px ${CSS.escape('var(--color-shadow)')}, 0 2px 4px -1px ${CSS.escape('var(--color-shadow)')}`;
+          e.currentTarget.style.boxShadow = isMinimalTheme
+            ? 'none'
+            : `0 4px 6px -1px ${CSS.escape('var(--color-shadow)')}, 0 2px 4px -1px ${CSS.escape('var(--color-shadow)')}`;
         }
       }}
     >
@@ -42,7 +51,7 @@ export const Card = ({ children, className = '', hover = false }: CardProps) => 
 export const CardImage = ({ src, alt }: { src: string; alt: string }) => {
   return (
     <div
-      className="w-full h-64 overflow-hidden"
+      className="w-full h-80 overflow-hidden"
       style={{ backgroundColor: 'var(--color-borderLight)' }}
     >
       {src ? (

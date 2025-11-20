@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AdminProductCard } from '@/components/admin/AdminProductCard';
+import { Button } from '@/components/ui/Button';
+import { Product } from '@/types';
 
 interface User {
   id: string;
@@ -10,7 +13,7 @@ interface User {
   isAdmin: boolean;
 }
 
-interface Product {
+interface StripeProduct {
   id: string;
   name: string;
   description: string | null;
@@ -83,7 +86,17 @@ export default function AdminPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products);
+        // Converter produtos do Stripe para o formato do Product
+        const convertedProducts: Product[] = data.products.map((p: StripeProduct) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description || '',
+          price: p.price?.unit_amount ? p.price.unit_amount / 100 : 0,
+          image: p.images[0] || '',
+          category: 'Produtos',
+          stock: parseInt(p.metadata?.stock || '0'),
+        }));
+        setProducts(convertedProducts);
       }
     } catch (error) {
       console.error('Error loading products:', error);
@@ -118,15 +131,14 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    router.push('/');
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
   };
 
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center pt-24"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
         <div className="text-xl" style={{ color: 'var(--color-text)' }}>
@@ -137,111 +149,143 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-      {/* Header */}
-      <header
-        className="shadow-lg"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
+    <div className="min-h-screen pt-24" style={{ backgroundColor: 'var(--color-background)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
               <h1
-                className="text-2xl font-bold"
+                className="text-3xl font-bold mb-2"
                 style={{ color: 'var(--color-text)' }}
               >
                 Painel Administrativo
               </h1>
-              <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
+              <p style={{ color: 'var(--color-textSecondary)' }}>
                 Bem-vindo, {user?.username}
               </p>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => router.push('/')}
-                className="px-4 py-2 rounded transition-colors"
-                style={{
-                  color: 'var(--color-textSecondary)',
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--color-textSecondary)';
-                }}
+            <div className="flex gap-3">
+              <Button
+                onClick={() => router.push('/admin/transactions')}
+                variant="outline"
+                size="md"
               >
-                Ver Loja
-              </button>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 rounded transition-colors"
-                style={{
-                  backgroundColor: 'var(--color-error)',
-                  color: 'white',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.9';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1';
-                }}
+                Ver Transações
+              </Button>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                variant="primary"
+                size="md"
               >
-                Sair
-              </button>
+                + Novo Produto
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+              className="rounded-lg p-6"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                    Produtos Cadastrados
+                  </h3>
+                  <p className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>
+                    {products.length}
+                  </p>
+                </div>
+                <div className="text-4xl">📦</div>
+              </div>
+            </div>
+
+            <div
+              className="rounded-lg p-6"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                    Em Estoque
+                  </h3>
+                  <p className="text-3xl font-bold" style={{ color: 'var(--color-success)' }}>
+                    {products.filter(p => p.stock > 0).length}
+                  </p>
+                </div>
+                <div className="text-4xl">✅</div>
+              </div>
+            </div>
+
+            <div
+              className="rounded-lg p-6"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                    Sem Estoque
+                  </h3>
+                  <p className="text-3xl font-bold" style={{ color: 'var(--color-error)' }}>
+                    {products.filter(p => p.stock === 0).length}
+                  </p>
+                </div>
+                <div className="text-4xl">⚠️</div>
+              </div>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-xl font-semibold" style={{ color: 'var(--color-text)' }}>
+        {/* Section Title */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
             Gerenciar Produtos
           </h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 rounded font-semibold transition-colors"
-            style={{
-              backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-primaryText)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-primaryHover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
-            }}
-          >
-            + Novo Produto
-          </button>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={setEditingProduct}
-              onDelete={handleDeleteProduct}
-            />
-          ))}
-        </div>
-
-        {products.length === 0 && (
+        {products.length === 0 ? (
           <div
-            className="text-center py-12"
-            style={{ color: 'var(--color-textMuted)' }}
+            className="rounded-lg p-12 text-center"
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+            }}
           >
-            Nenhum produto encontrado. Crie seu primeiro produto!
+            <p className="text-xl mb-4" style={{ color: 'var(--color-text)' }}>
+              Nenhum produto encontrado
+            </p>
+            <p className="mb-6" style={{ color: 'var(--color-textSecondary)' }}>
+              Crie seu primeiro produto!
+            </p>
+            <Button onClick={() => setShowCreateModal(true)}>
+              + Novo Produto
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {products.map((product) => (
+              <AdminProductCard
+                key={product.id}
+                product={product}
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
+              />
+            ))}
           </div>
         )}
-      </main>
+      </div>
 
       {/* Create Modal */}
       {showCreateModal && (
@@ -269,118 +313,7 @@ export default function AdminPage() {
   );
 }
 
-// Product Card Component
-function ProductCard({
-  product,
-  onEdit,
-  onDelete,
-}: {
-  product: Product;
-  onEdit: (product: Product) => void;
-  onDelete: (id: string) => void;
-}) {
-  const price = product.price?.unit_amount
-    ? (product.price.unit_amount / 100).toFixed(2)
-    : '0.00';
-  const stock = product.metadata?.stock || '0';
-
-  return (
-    <div
-      className="rounded-lg shadow-md overflow-hidden transition-all duration-300"
-      style={{
-        backgroundColor: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = `0 10px 20px -5px var(--color-shadow)`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = `0 4px 6px -1px var(--color-shadow)`;
-      }}
-    >
-      {product.images[0] ? (
-        <img
-          src={product.images[0]}
-          alt={product.name}
-          className="w-full h-48 object-cover"
-        />
-      ) : (
-        <div
-          className="w-full h-48 flex items-center justify-center"
-          style={{
-            backgroundColor: 'var(--color-borderLight)',
-            color: 'var(--color-textMuted)',
-          }}
-        >
-          Sem imagem
-        </div>
-      )}
-      <div className="p-4">
-        <h3
-          className="font-semibold text-lg mb-2"
-          style={{ color: 'var(--color-text)' }}
-        >
-          {product.name}
-        </h3>
-        <p
-          className="text-sm mb-3 line-clamp-2"
-          style={{ color: 'var(--color-textSecondary)' }}
-        >
-          {product.description}
-        </p>
-        <div className="flex justify-between items-center mb-3">
-          <span
-            className="text-xl font-bold"
-            style={{ color: 'var(--color-success)' }}
-          >
-            R$ {price}
-          </span>
-          <span className="text-sm" style={{ color: 'var(--color-textMuted)' }}>
-            Estoque: {stock}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onEdit(product)}
-            className="flex-1 px-3 py-2 rounded text-sm font-semibold transition-colors"
-            style={{
-              backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-primaryText)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-primaryHover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
-            }}
-          >
-            Editar
-          </button>
-          <button
-            onClick={() => onDelete(product.id)}
-            className="flex-1 px-3 py-2 rounded text-sm font-semibold transition-colors"
-            style={{
-              backgroundColor: 'var(--color-error)',
-              color: 'white',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '0.9';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '1';
-            }}
-          >
-            Excluir
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Product Modal Component
+// Product Modal Component (mantido igual)
 function ProductModal({
   product,
   onClose,
@@ -393,11 +326,9 @@ function ProductModal({
   const [formData, setFormData] = useState({
     name: product?.name || '',
     description: product?.description || '',
-    price: product?.price?.unit_amount
-      ? (product.price.unit_amount / 100).toString()
-      : '',
-    stock: product?.metadata?.stock || '0',
-    images: product?.images[0] || '',
+    price: product?.price?.toString() || '',
+    stock: product?.stock?.toString() || '0',
+    images: product?.image || '',
   });
   const [loading, setLoading] = useState(false);
 

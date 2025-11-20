@@ -1,6 +1,9 @@
 // Badge component for displaying categories and status
 
+'use client';
+
 import { ReactNode, CSSProperties } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface BadgeProps {
   children: ReactNode;
@@ -8,6 +11,8 @@ interface BadgeProps {
 }
 
 export const Badge = ({ children, variant = 'default' }: BadgeProps) => {
+  const { isMinimalTheme } = useTheme();
+
   const getVariantStyles = (): CSSProperties => {
     switch (variant) {
       case 'success':
@@ -37,9 +42,11 @@ export const Badge = ({ children, variant = 'default' }: BadgeProps) => {
     }
   };
 
+  const roundedClass = isMinimalTheme ? '' : 'rounded-full';
+
   return (
     <span
-      className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+      className={`inline-block px-3 py-1 ${roundedClass} text-xs font-semibold`}
       style={getVariantStyles()}
     >
       {children}

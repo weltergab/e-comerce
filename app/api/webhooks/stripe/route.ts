@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { updateStock } from '@/lib/services/stock';
+import { supabase } from '@/lib/supabase/client';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
@@ -53,6 +54,12 @@ export async function POST(req: NextRequest) {
     }
 
     switch (event.type) {
+      case 'payment_intent.created':
+      case 'payment_intent.processing':
+        const processingPayment = event.data.object as Stripe.PaymentIntent;
+        await handlePaymentProcessing(processingPayment);
+        break;
+
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         await handlePaymentSuccess(paymentIntent);
@@ -82,6 +89,96 @@ export async function POST(req: NextRequest) {
   }
 }
 
+async function handlePaymentProcessing(paymentIntent: Stripe.PaymentIntent) {
+  console.log('\n⏳ ========================================');
+  console.log('🔄 Payment processing:', paymentIntent.id);
+  console.log('Status:', paymentIntent.status);
+  console.log('========================================\n');
+
+  // Extract products and user data from metadata
+  const productsData = paymentIntent.metadata.products;
+  const userEmail = paymentIntent.metadata.userEmail;
+  const userId = paymentIntent.metadata.userId;
+  const userName = paymentIntent.metadata.userName;
+
+  if (!productsData) {
+    console.error('❌ No products in metadata');
+    return;
+  }
+
+  try {
+    const products = JSON.parse(productsData);
+
+    // Get payment method details
+    const paymentMethod = paymentIntent.payment_method
+      ? await stripe.paymentMethods.retrieve(paymentIntent.payment_method as string)
+      : null;
+
+    const paymentMethodType = paymentMethod?.type ||
+      (paymentIntent.next_action?.type === 'boleto_display_details' ? 'boleto' : null);
+
+    // Get boleto URL if available
+    let boletoUrl: string | null = null;
+    if (paymentIntent.next_action?.type === 'boleto_display_details') {
+      boletoUrl = paymentIntent.next_action.boleto_display_details?.hosted_voucher_url || null;
+      console.log('🎫 Boleto URL found:', boletoUrl);
+    }
+
+    // Check if transaction already exists
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .single();
+
+    if (existing) {
+      // Update existing transaction
+      console.log('📝 Updating existing transaction...');
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          status: paymentIntent.status,
+          payment_method: paymentMethodType,
+          boleto_url: boletoUrl,
+        })
+        .eq('stripe_payment_intent_id', paymentIntent.id);
+
+      if (error) {
+        console.error('❌ Error updating transaction:', error);
+      } else {
+        console.log('✅ Transaction updated');
+      }
+    } else {
+      // Create new transaction
+      console.log('💾 Creating new transaction...');
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId || null,
+          user_email: userEmail || 'unknown',
+          user_name: userName || 'Usuário desconhecido',
+          stripe_payment_intent_id: paymentIntent.id,
+          amount: paymentIntent.amount / 100,
+          currency: paymentIntent.currency,
+          status: paymentIntent.status,
+          payment_method: paymentMethodType,
+          boleto_url: boletoUrl,
+          products: products,
+        });
+
+      if (error) {
+        console.error('❌ Error creating transaction:', error);
+      } else {
+        console.log('✅ Transaction created');
+      }
+    }
+
+    console.log('\n✅ Payment processing recorded');
+  } catch (error) {
+    console.error('❌ Error handling payment processing:', error);
+  }
+}
+
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   console.log('\n🎉 ========================================');
   console.log('💰 Payment succeeded:', paymentIntent.id);
@@ -89,6 +186,9 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
 
   // Extract products from metadata
   const productsData = paymentIntent.metadata.products;
+  const userEmail = paymentIntent.metadata.userEmail;
+  const userId = paymentIntent.metadata.userId;
+  const userName = paymentIntent.metadata.userName;
 
   if (!productsData) {
     console.error('❌ No products in metadata');
@@ -99,6 +199,53 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   try {
     const products = JSON.parse(productsData);
     console.log('📦 Products to update:', products);
+
+    // Check if transaction already exists
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .single();
+
+    if (existing) {
+      // Update existing transaction to succeeded
+      console.log('📝 Updating transaction to succeeded...');
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          status: 'succeeded',
+        })
+        .eq('stripe_payment_intent_id', paymentIntent.id);
+
+      if (error) {
+        console.error('❌ Error updating transaction:', error);
+      } else {
+        console.log('✅ Transaction updated to succeeded');
+      }
+    } else {
+      // Save new transaction to database
+      console.log('\n💾 Saving transaction to database...');
+      const { data: transactionData, error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId || null,
+          user_email: userEmail || 'unknown',
+          user_name: userName || 'Usuário desconhecido',
+          stripe_payment_intent_id: paymentIntent.id,
+          amount: paymentIntent.amount / 100, // Convert from cents
+          currency: paymentIntent.currency,
+          status: 'succeeded',
+          products: products,
+        })
+        .select()
+        .single();
+
+      if (transactionError) {
+        console.error('❌ Error saving transaction:', transactionError);
+      } else {
+        console.log('✅ Transaction saved:', transactionData?.id);
+      }
+    }
 
     // Update stock for each product
     for (const item of products) {

@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         userId: user.userId,
         userEmail: user.email,
+        userName: user.username,
         itemCount: items.length.toString(),
         products: JSON.stringify(items.map((item: any) => ({
           id: item.productId,

@@ -1,4 +1,4 @@
-export type ThemeMode = 'light1' | 'light2' | 'dark1' | 'dark2';
+export type ThemeMode = 'light3' | 'dark2';
 
 export interface Theme {
   mode: ThemeMode;

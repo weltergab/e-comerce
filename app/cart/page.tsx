@@ -14,7 +14,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <Card>
           <CardContent className="text-center py-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -33,7 +33,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">
         Carrinho de Compras
       </h1>
@@ -74,15 +74,7 @@ export default function CartPage() {
                   </div>
 
                   {/* Quantity Controls */}
-                  <div className="flex flex-col items-end justify-between">
-                    <Button
-                      onClick={() => removeItem(item.product.id)}
-                      variant="danger"
-                      size="sm"
-                    >
-                      Remover
-                    </Button>
-
+                  <div className="flex flex-col items-end justify-between gap-2">
                     <div className="flex items-center space-x-2">
                       <Button
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
@@ -107,6 +99,14 @@ export default function CartPage() {
                     <p className="font-bold text-lg">
                       {formatCurrency(item.product.price * item.quantity)}
                     </p>
+
+                    <Button
+                      onClick={() => removeItem(item.product.id)}
+                      variant="danger"
+                      size="sm"
+                    >
+                      Remover
+                    </Button>
                   </div>
                 </div>
               </CardContent>

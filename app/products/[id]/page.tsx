@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils/format';
+import { AddToCartButton } from '@/components/product/AddToCartButton';
 
 export default function ProductPage() {
   const params = useParams();
@@ -16,8 +17,6 @@ export default function ProductPage() {
   const [currentStock, setCurrentStock] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -53,17 +52,13 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (product) {
-      setIsAdding(true);
       const success = await addItem(product, quantity);
 
       if (success) {
-        setJustAdded(true);
         setTimeout(() => {
           router.push('/cart');
-        }, 1000);
+        }, 1500);
       }
-
-      setIsAdding(false);
     }
   };
 
@@ -81,7 +76,7 @@ export default function ProductPage() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <div className="animate-pulse" style={{ color: 'var(--color-text)' }}>
           Carregando...
         </div>
@@ -91,7 +86,7 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
           Produto não encontrado
         </h1>
@@ -103,7 +98,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       <Button onClick={() => router.back()} variant="outline" className="mb-6">
         ← Voltar
       </Button>
@@ -175,7 +170,7 @@ export default function ProductPage() {
               >
                 -
               </Button>
-              <span className="text-xl font-semibold w-12 text-center">
+              <span className="text-xl font-semibold w-12 text-center text-gray-900">
                 {quantity}
               </span>
               <Button
@@ -189,24 +184,13 @@ export default function ProductPage() {
             </div>
           </div>
 
-          <Button
-            onClick={handleAddToCart}
+          <AddToCartButton
+            onAddToCart={handleAddToCart}
+            disabled={currentStock === 0}
             size="lg"
-            disabled={currentStock === 0 || isAdding}
-            className={`mb-4 transition-all duration-300 ${
-              justAdded
-                ? 'bg-green-600 hover:bg-green-700 scale-105'
-                : ''
-            }`}
-          >
-            {isAdding
-              ? 'Adicionando...'
-              : justAdded
-              ? '✓ Adicionado! Redirecionando...'
-              : currentStock > 0
-              ? 'Adicionar ao Carrinho'
-              : 'Sem Estoque'}
-          </Button>
+            fullWidth
+            className="mb-4"
+          />
 
           <Button
             onClick={() => router.push('/')}
