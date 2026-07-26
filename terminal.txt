@@ -1,8 +1,0 @@
-Buscar e kill process:
-
-netstat -ano | findstr :3000
-
-  TCP    127.0.0.1:60053        127.0.0.1:3000         SYN_SENT        12176
-  TCP    [::1]:60052            [::1]:3000             SYN_SENT        12176
-
-/F /PID 12179

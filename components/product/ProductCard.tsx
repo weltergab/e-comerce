@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Product } from '@/types';
 import { Card, CardImage, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -38,7 +38,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           onClose={() => setShowToast(false)}
         />
       )}
-      <Link href={`/products/${product.id}`} className="h-full block">
+      <Link to={`/products/${product.id}`} className="h-full block">
         <Card hover className="h-full flex flex-col">
           <CardImage src={product.image} alt={product.name} />
           <CardContent className="flex-1 flex flex-col">

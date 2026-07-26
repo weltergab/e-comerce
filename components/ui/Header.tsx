@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -28,7 +28,7 @@ export const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link
-            href="/"
+            to="/"
             className="text-2xl font-bold"
             style={{ color: 'var(--color-primary)' }}
           >
@@ -38,7 +38,7 @@ export const Header = () => {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
             <Link
-              href="/"
+              to="/"
               className="font-medium"
               style={{ color: 'var(--color-textSecondary)' }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
@@ -48,7 +48,7 @@ export const Header = () => {
             </Link>
             {user && (
               <Link
-                href="/my-orders"
+                to="/my-orders"
                 className="font-medium"
                 style={{ color: 'var(--color-textSecondary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
@@ -58,7 +58,7 @@ export const Header = () => {
               </Link>
             )}
             <Link
-              href="/cart"
+              to="/cart"
               className="relative font-medium"
               style={{ color: 'var(--color-textSecondary)' }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
@@ -77,7 +77,7 @@ export const Header = () => {
 
             {user?.isAdmin && (
               <Link
-                href="/admin"
+                to="/admin"
                 className="font-medium px-3 py-1 rounded"
                 style={{
                   color: 'var(--color-accentText)',
@@ -109,7 +109,7 @@ export const Header = () => {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link
-                  href="/login"
+                  to="/login"
                   className="font-medium"
                   style={{ color: 'var(--color-textSecondary)' }}
                   onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
@@ -117,7 +117,7 @@ export const Header = () => {
                 >
                   Login
                 </Link>
-                <Link href="/cadastro">
+                <Link to="/cadastro">
                   <Button size="sm">
                     Cadastro
                   </Button>
@@ -133,7 +133,7 @@ export const Header = () => {
 
             {/* Cart */}
             <Link
-              href="/cart"
+              to="/cart"
               className="relative"
               style={{ color: 'var(--color-text)' }}
             >
@@ -176,7 +176,7 @@ export const Header = () => {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3">
             <Link
-              href="/"
+              to="/"
               className="block py-2 font-medium"
               style={{ color: 'var(--color-textSecondary)' }}
               onClick={() => setIsMenuOpen(false)}
@@ -185,7 +185,7 @@ export const Header = () => {
             </Link>
             {user && (
               <Link
-                href="/my-orders"
+                to="/my-orders"
                 className="block py-2 font-medium"
                 style={{ color: 'var(--color-textSecondary)' }}
                 onClick={() => setIsMenuOpen(false)}
@@ -195,7 +195,7 @@ export const Header = () => {
             )}
             {user?.isAdmin && (
               <Link
-                href="/admin"
+                to="/admin"
                 className="block py-2 font-medium"
                 style={{ color: 'var(--color-textSecondary)' }}
                 onClick={() => setIsMenuOpen(false)}
@@ -227,12 +227,12 @@ export const Header = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" size="sm" fullWidth>
                       Login
                     </Button>
                   </Link>
-                  <Link href="/cadastro" onClick={() => setIsMenuOpen(false)}>
+                  <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
                     <Button size="sm" fullWidth>
                       Cadastro
                     </Button>

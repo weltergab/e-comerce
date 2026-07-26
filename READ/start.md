@@ -1,3 +1,13 @@
+Crie um projeto postgres no supabase.
+Use o sql para criar o banco que está em /database/create-database.sql
+Copie as keys em: .env.local
+
+Na pasta do projeto (\ecomerceReact2):  
+Para rodar o **frontend**:  
+```npm run dev```  
+Para rodar o **backend**:  
+```npm run dev:api```
+
 
 # Stripe CLI - Webhook
 

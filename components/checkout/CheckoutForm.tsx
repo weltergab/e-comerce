@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   PaymentElement,
   useStripe,
@@ -12,7 +11,6 @@ import { Button } from '@/components/ui/Button';
 export const CheckoutForm = () => {
   const stripe = useStripe();
   const elements = useElements();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
