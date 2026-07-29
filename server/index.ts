@@ -24,8 +24,8 @@ async function loadDependencies() {
 }
 
 const app = express();
-const port = Number(process.env.PORT || 3001);
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || 'http://localhost:5173';
+const port = Number(process.env.PORT_BACKEND || 3001);
+const frontUrl = process.env.FRONT_URL || 'http://localhost:5173';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
 });
@@ -293,8 +293,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
       payment_method_types: ['card'],
       line_items: items.map((item: any) => ({ price: item.stripePriceId, quantity: item.quantity })),
       mode: 'payment',
-      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/cart`,
+      success_url: `${frontUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontUrl}/cart`,
       metadata: {
         cartData: JSON.stringify(items.map((item: any) => ({ productId: item.productId, quantity: item.quantity }))),
       },
