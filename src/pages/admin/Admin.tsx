@@ -6,6 +6,7 @@ import { AdminProductCard } from '@/components/admin/AdminProductCard';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
 import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, Image } from 'lucide-react';
+import { apiFetch } from '@/lib/api/client';
 
 interface User {
   id: string;
@@ -50,7 +51,7 @@ export default function AdminPage() {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await apiFetch('/api/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -79,7 +80,7 @@ export default function AdminPage() {
   const loadProducts = async () => {
     const token = localStorage.getItem('auth_token');
     try {
-      const response = await fetch('/api/admin/products', {
+      const response = await apiFetch('/api/admin/products', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -113,7 +114,7 @@ export default function AdminPage() {
 
     const token = localStorage.getItem('auth_token');
     try {
-      const response = await fetch(`/api/admin/products/${productId}`, {
+      const response = await apiFetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -344,7 +345,7 @@ function ProductModal({
     const method = product ? 'PUT' : 'POST';
 
     try {
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Package, CheckCircle, DollarSign, ShoppingBag, Calendar, FileText, CreditCard, Receipt, ClipboardList, User } from 'lucide-react';
+import { apiFetch } from '@/lib/api/client';
 
 interface Product {
   id: string;
@@ -48,7 +49,7 @@ export default function MyOrdersPage() {
 
   const loadProductNames = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await apiFetch('/api/products');
       if (response.ok) {
         const data = await response.json();
         const names: Record<string, string> = {};
@@ -65,7 +66,7 @@ export default function MyOrdersPage() {
   const loadTransactions = async () => {
     const token = localStorage.getItem('auth_token');
     try {
-      const response = await fetch('/api/my-transactions', {
+      const response = await apiFetch('/api/my-transactions', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

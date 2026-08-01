@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, CheckCircle, DollarSign, ShoppingBag, Calendar, FileText, CreditCard, Receipt, ClipboardList, User } from 'lucide-react';
+import { apiFetch } from '@/lib/api/client';
 
 interface User {
   id: string;
@@ -51,7 +52,7 @@ export default function TransactionsPage() {
 
   const loadProductNames = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await apiFetch('/api/products');
       if (response.ok) {
         const data = await response.json();
         const names: Record<string, string> = {};
@@ -73,7 +74,7 @@ export default function TransactionsPage() {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await apiFetch('/api/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -102,7 +103,7 @@ export default function TransactionsPage() {
   const loadTransactions = async () => {
     const token = localStorage.getItem('auth_token');
     try {
-      const response = await fetch('/api/admin/transactions', {
+      const response = await apiFetch('/api/admin/transactions', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -457,7 +458,7 @@ function TransactionModal({
     setIsSaving(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/admin/transactions/${transaction.id}`, {
+      const response = await apiFetch(`/api/admin/transactions/${transaction.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

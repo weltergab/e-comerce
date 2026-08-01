@@ -33,6 +33,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const sendError = (res: Response, status: number, error: string) =>
   res.status(status).json({ error });
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', frontUrl);
+  res.header('Vary', 'Origin');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Stripe-Signature');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
 const formatStripeProduct = async (product: Stripe.Product) => {
   let priceData: { id: string; unit_amount: number | null; currency: string } | null = null;
   const defaultPrice = product.default_price;

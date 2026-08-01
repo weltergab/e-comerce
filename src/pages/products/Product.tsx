@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils/format';
 import { AddToCartButton } from '@/components/product/AddToCartButton';
+import { apiFetch } from '@/lib/api/client';
 
 export default function ProductPage() {
   const params = useParams();
@@ -22,7 +23,7 @@ export default function ProductPage() {
     const loadProduct = async () => {
       try {
         // Buscar todos os produtos
-        const response = await fetch('/api/products');
+        const response = await apiFetch('/api/products');
         const data = await response.json();
 
         if (data.success && data.products) {
@@ -35,7 +36,7 @@ export default function ProductPage() {
             setProduct(foundProduct);
 
             // Buscar estoque
-            const stockResponse = await fetch('/api/stock');
+            const stockResponse = await apiFetch('/api/stock');
             const stockData = await stockResponse.json();
             setCurrentStock(stockData.stock[foundProduct.id] || foundProduct.stock);
           }

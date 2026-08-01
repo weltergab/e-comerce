@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { CheckoutForm } from '@/components/checkout/CheckoutForm';
 import { formatCurrency } from '@/lib/utils/format';
 import { getStripe } from '@/lib/stripe/stripe';
+import { apiFetch } from '@/lib/api/client';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ export default function CheckoutPage() {
 
         console.log('📦 Sending items to create payment intent:', stripeItems);
 
-        const response = await fetch('/api/create-payment-intent', {
+        const response = await apiFetch('/api/create-payment-intent', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

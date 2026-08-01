@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { useStock } from '@/lib/hooks/useStock';
+import { apiFetch } from '@/lib/api/client';
 
 interface ProductGridProps {
   initialProducts: Product[];
@@ -19,7 +20,7 @@ export const ProductGrid = ({ initialProducts }: ProductGridProps) => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/products');
+        const response = await apiFetch('/api/products');
         if (response.ok) {
           const data = await response.json();
           setProducts(data.products);

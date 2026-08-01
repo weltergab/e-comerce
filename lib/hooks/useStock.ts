@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api/client';
 
 export function useStock() {
   const [stockLevels, setStockLevels] = useState<Record<string, number>>({});
@@ -8,7 +9,7 @@ export function useStock() {
 
   const fetchStock = async () => {
     try {
-      const response = await fetch('/api/stock', {
+      const response = await apiFetch('/api/stock', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',

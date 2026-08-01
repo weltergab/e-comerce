@@ -1,3 +1,6 @@
+https://vercel.com/weltergabs-projects/e-comerce/deployments
+
+
 Crie um projeto postgres no supabase.
 Use o sql para criar o banco que está em /database/create-database.sql
 Copie as keys em: .env.local

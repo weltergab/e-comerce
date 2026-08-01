@@ -5,6 +5,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem } from '@/types';
 import { calculateTotal } from '@/lib/utils/format';
+import { apiFetch } from '@/lib/api/client';
 
 interface CartContextType {
   items: CartItem[];
@@ -39,7 +40,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addItem = async (product: Product, quantity = 1): Promise<boolean> => {
     try {
-      const response = await fetch('/api/stock');
+      const response = await apiFetch('/api/stock');
       const data = await response.json();
       const availableStock = data.stock[product.id] || 0;
 
