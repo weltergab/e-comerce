@@ -31,10 +31,31 @@ interface StripeProduct {
   } | null;
 }
 
+interface HealthService {
+  ok: boolean;
+  label: string;
+  message: string;
+  checkedAt: string;
+  uptimeSeconds?: number;
+  mode?: string;
+}
+
+interface HealthCheck {
+  ok: boolean;
+  checkedAt: string;
+  services: {
+    backend: HealthService;
+    database: HealthService;
+    stripe: HealthService;
+  };
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthCheck, setHealthCheck] = useState<HealthCheck | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const navigate = useNavigate();
@@ -137,6 +158,32 @@ export default function AdminPage() {
     setEditingProduct(product);
   };
 
+  const handleCheckHealth = async () => {
+    const token = localStorage.getItem('auth_token');
+    setHealthLoading(true);
+
+    try {
+      const response = await apiFetch('/api/admin/health', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Erro ao verificar conexoes');
+        return;
+      }
+
+      setHealthCheck(data);
+    } catch (error) {
+      console.error('Error checking health:', error);
+      alert('Erro ao verificar conexoes');
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -169,6 +216,14 @@ export default function AdminPage() {
             </div>
             <div className="flex gap-3">
               <Button
+                onClick={handleCheckHealth}
+                variant="outline"
+                size="md"
+                disabled={healthLoading}
+              >
+                {healthLoading ? 'Verificando...' : 'Verificar Conexoes'}
+              </Button>
+              <Button
                 onClick={() => navigate('/admin/transactions')}
                 variant="outline"
                 size="md"
@@ -184,6 +239,68 @@ export default function AdminPage() {
               </Button>
             </div>
           </div>
+
+          {healthCheck && (
+            <div
+              className="rounded-lg p-5 mb-6"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
+                  Status das Conexoes
+                </h2>
+                <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
+                  Atualizado em {new Date(healthCheck.checkedAt).toLocaleString('pt-BR')}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  healthCheck.services.backend,
+                  healthCheck.services.database,
+                  healthCheck.services.stripe,
+                ].map((service) => (
+                  <div
+                    key={service.label}
+                    className="rounded-lg p-4"
+                    style={{
+                      backgroundColor: 'var(--color-background)',
+                      border: '1px solid var(--color-borderLight)',
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
+                          {service.label}
+                        </p>
+                        <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
+                          {service.message}
+                        </p>
+                        {service.mode && (
+                          <p className="text-xs mt-2" style={{ color: 'var(--color-textMuted)' }}>
+                            Modo: {service.mode}
+                          </p>
+                        )}
+                        {service.uptimeSeconds !== undefined && (
+                          <p className="text-xs mt-2" style={{ color: 'var(--color-textMuted)' }}>
+                            Uptime: {service.uptimeSeconds}s
+                          </p>
+                        )}
+                      </div>
+                      {service.ok ? (
+                        <CheckCircle className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--color-success)' }} />
+                      ) : (
+                        <AlertTriangle className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--color-error)' }} />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

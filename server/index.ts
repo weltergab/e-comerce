@@ -24,7 +24,7 @@ async function loadDependencies() {
 }
 
 const app = express();
-const port = Number(process.env.PORT_BACKEND || 3001);
+const port = Number(process.env.PORT || process.env.PORT_BACKEND || 3001);
 const frontUrl = process.env.FRONT_URL || 'http://localhost:5173';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
@@ -108,9 +108,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      await upsertTransaction(paymentIntent, 'succeeded');
-      const products = JSON.parse(paymentIntent.metadata.products || '[]');
-      for (const item of products) await updateStock(item.id, item.qty);
+      const result = await upsertTransaction(paymentIntent, 'succeeded');
+      if (result.previousStatus !== 'succeeded') {
+        const products = JSON.parse(paymentIntent.metadata.products || '[]');
+        for (const item of products) await updateStock(item.id, item.qty);
+      }
     }
 
     res.json({ received: true });
@@ -297,6 +299,41 @@ app.post('/api/create-payment-intent', async (req, res) => {
   }
 });
 
+app.post('/api/confirm-payment-intent', async (req, res) => {
+  try {
+    const user = authenticateRequest(req);
+    if (!user) return sendError(res, 401, 'Não autenticado');
+
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+      return sendError(res, 400, 'Payment Intent inválido');
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (paymentIntent.metadata.userId !== user.userId) {
+      return sendError(res, 403, 'Pagamento não pertence ao usuário autenticado');
+    }
+
+    const result = await upsertTransaction(
+      paymentIntent,
+      paymentIntent.status === 'succeeded' ? 'succeeded' : undefined
+    );
+
+    if (paymentIntent.status === 'succeeded' && result.previousStatus !== 'succeeded') {
+      const products = JSON.parse(paymentIntent.metadata.products || '[]');
+      for (const item of products) await updateStock(item.id, item.qty);
+    }
+
+    res.json({
+      success: true,
+      status: paymentIntent.status,
+    });
+  } catch (error: any) {
+    console.error('Confirm Payment Intent Error:', error);
+    sendError(res, 500, error.message || 'Erro ao confirmar pagamento');
+  }
+});
+
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { items } = req.body;
@@ -331,6 +368,69 @@ app.get('/api/admin/products', async (req, res) => {
     console.error('Error fetching products:', error);
     sendError(res, 500, 'Erro ao buscar produtos');
   }
+});
+
+app.get('/api/admin/health', async (req, res) => {
+  if (!authenticateAdmin(req)) return sendError(res, 403, 'Acesso negado. Apenas administradores.');
+
+  const checkedAt = new Date().toISOString();
+
+  const backend = {
+    ok: true,
+    label: 'Backend Express',
+    message: 'API respondendo',
+    checkedAt,
+    uptimeSeconds: Math.round(process.uptime()),
+  };
+
+  const database = {
+    ok: false,
+    label: 'Supabase',
+    message: '',
+    checkedAt,
+  };
+
+  const stripeStatus = {
+    ok: false,
+    label: 'Stripe',
+    message: '',
+    checkedAt,
+    mode: 'unknown',
+  };
+
+  try {
+    const { error } = await supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true });
+
+    if (error) {
+      database.message = error.message || 'Erro ao consultar o Supabase';
+    } else {
+      database.ok = true;
+      database.message = 'Banco respondendo';
+    }
+  } catch (error: any) {
+    database.message = error.message || 'Erro ao conectar ao Supabase';
+  }
+
+  try {
+    const balance = await stripe.balance.retrieve();
+    stripeStatus.ok = true;
+    stripeStatus.message = 'Stripe respondendo';
+    stripeStatus.mode = balance.livemode ? 'live' : 'test';
+  } catch (error: any) {
+    stripeStatus.message = error.message || 'Erro ao conectar a Stripe';
+  }
+
+  res.json({
+    ok: backend.ok && database.ok && stripeStatus.ok,
+    checkedAt,
+    services: {
+      backend,
+      database,
+      stripe: stripeStatus,
+    },
+  });
 });
 
 app.post('/api/admin/products', async (req, res) => {
@@ -560,9 +660,9 @@ async function upsertTransaction(paymentIntent: Stripe.PaymentIntent, forcedStat
 
   const { data: existing } = await supabase
     .from('transactions')
-    .select('id')
+    .select('id, status')
     .eq('stripe_payment_intent_id', paymentIntent.id)
-    .single();
+    .maybeSingle();
 
   const transactionData = {
     user_id: paymentIntent.metadata.userId || null,
@@ -589,6 +689,12 @@ async function upsertTransaction(paymentIntent: Stripe.PaymentIntent, forcedStat
   } else {
     await supabase.from('transactions').insert(transactionData);
   }
+
+  return {
+    existed: Boolean(existing),
+    previousStatus: existing?.status || null,
+    currentStatus: transactionData.status,
+  };
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
