@@ -23,6 +23,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const sendError = (res: Response, status: number, error: string) =>
   res.status(status).json({ error });
 
+app.get('/api/health', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'storecy-backend',
+    checkedAt: new Date().toISOString(),
+  });
+});
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
