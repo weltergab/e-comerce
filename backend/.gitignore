@@ -1,0 +1,25 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# env files
+.env*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dev.log
+
+# build/cache
+/dist
+/build
+.vercel
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem

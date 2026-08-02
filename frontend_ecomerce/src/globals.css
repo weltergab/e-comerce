@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --color-headingH1: #111827;
+  --color-headingH2: #171717;
+  --color-headingH3: #262626;
+  --color-headingH4: #404040;
+  --color-paragraph: #525252;
+  --color-specialText: #171717;
+  --color-buttonPrimaryBg: #171717;
+  --color-buttonSecondaryBg: #eceef0;
+  --color-buttonPrimarySecondary: #404040;
+  --color-buttonSecondarySecondary: #e1e3e5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-theme-h1: var(--color-headingH1);
+  --color-theme-h2: var(--color-headingH2);
+  --color-theme-h3: var(--color-headingH3);
+  --color-theme-h4: var(--color-headingH4);
+  --color-theme-p: var(--color-paragraph);
+  --color-theme-special: var(--color-specialText);
+  --color-theme-button-primary: var(--color-buttonPrimaryBg);
+  --color-theme-button-secondary: var(--color-buttonSecondaryBg);
+  --color-theme-button-primary-secondary: var(--color-buttonPrimarySecondary);
+  --color-theme-button-secondary-secondary: var(--color-buttonSecondarySecondary);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-poppins);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--color-paragraph);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins), system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  h1 {
+    color: var(--color-headingH1) !important;
+  }
+
+  h2 {
+    color: var(--color-headingH2) !important;
+  }
+
+  h3 {
+    color: var(--color-headingH3) !important;
+  }
+
+  h4 {
+    color: var(--color-headingH4) !important;
+  }
+
+  p {
+    color: var(--color-paragraph) !important;
+  }
+}
+
+@layer utilities {
+  .text-special {
+    color: var(--color-specialText) !important;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}

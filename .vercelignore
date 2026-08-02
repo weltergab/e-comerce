@@ -1,9 +1,0 @@
-node_modules
-.next
-.env.local
-.env*.local
-*.md
-!README.md
-.git
-data/
-dev.log
