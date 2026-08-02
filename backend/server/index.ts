@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import '../lib/config/env';
 import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import Stripe from 'stripe';
@@ -7,8 +7,6 @@ import { signToken } from '../lib/auth/jwt';
 import { updateStock } from '../lib/services/stock';
 import { syncAllPendingTransactions, syncTransactionStatus } from '../lib/services/transactions';
 import { supabase } from '../lib/supabase/client';
-
-dotenv.config({ path: '.env.local' });
 
 const app = express();
 const port = Number(process.env.PORT || process.env.PORT_BACKEND || 3001);

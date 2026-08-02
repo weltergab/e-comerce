@@ -1,3 +1,4 @@
+import '../config/env';
 import Stripe from 'stripe';
 import { supabase } from '../supabase/client';
 
