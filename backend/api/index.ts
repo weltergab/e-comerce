@@ -1,3 +1,3 @@
-import app from '../server/index';
+import { handleApi } from './_handler';
 
-export default app;
+export default handleApi;
