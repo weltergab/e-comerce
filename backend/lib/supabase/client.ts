@@ -1,12 +1,26 @@
 // Supabase client configuration
 import '../config/env';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+let cachedSupabase: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('SUPABASE_URL e SUPABASE_ANON_KEY precisam estar configuradas');
+export function getSupabase() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('SUPABASE_URL e SUPABASE_ANON_KEY precisam estar configuradas');
+  }
+
+  if (!cachedSupabase) {
+    cachedSupabase = createClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return cachedSupabase;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, property) {
+    return (getSupabase() as any)[property];
+  },
+});

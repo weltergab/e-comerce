@@ -2,6 +2,7 @@ import '../lib/config/env';
 import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import Stripe from 'stripe';
+import { stripe } from '../lib/stripe/client';
 import { authenticateAdmin, authenticateRequest } from '../lib/auth/middleware';
 import { signToken } from '../lib/auth/jwt';
 import { updateStock } from '../lib/services/stock';
@@ -10,29 +11,18 @@ import { supabase } from '../lib/supabase/client';
 
 const app = express();
 const port = Number(process.env.PORT || process.env.PORT_BACKEND || 3001);
-const frontUrl = process.env.FRONT_URL || 'http://localhost:5173';
+const normalizeOrigin = (origin: string) => origin.trim().replace(/\/$/, '');
+const frontUrl = normalizeOrigin(process.env.FRONT_URL || 'http://localhost:5173');
 const corsOrigins = new Set(
   [frontUrl, ...(process.env.CORS_ORIGINS || '').split(',')]
-    .map((origin) => origin.trim())
+    .map((origin) => normalizeOrigin(origin))
     .filter(Boolean)
 );
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-});
-
 const sendError = (res: Response, status: number, error: string) =>
   res.status(status).json({ error });
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    ok: true,
-    service: 'storecy-backend',
-    checkedAt: new Date().toISOString(),
-  });
-});
-
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
+  const origin = req.headers.origin ? normalizeOrigin(req.headers.origin) : null;
 
   if (!origin) {
     res.header('Access-Control-Allow-Origin', frontUrl);
@@ -49,6 +39,28 @@ app.use((req, res, next) => {
   }
 
   next();
+});
+
+app.get('/api/health', (_req, res) => {
+  const requiredEnv = [
+    'FRONT_URL',
+    'JWT_SECRET',
+    'SUPABASE_URL',
+    'SUPABASE_ANON_KEY',
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+  ];
+
+  res.json({
+    ok: requiredEnv.every((key) => Boolean(process.env[key])),
+    service: 'storecy-backend',
+    checkedAt: new Date().toISOString(),
+    env: Object.fromEntries(requiredEnv.map((key) => [key, Boolean(process.env[key])])),
+    cors: {
+      frontUrl,
+      origins: [...corsOrigins],
+    },
+  });
 });
 
 const formatStripeProduct = async (product: Stripe.Product) => {
