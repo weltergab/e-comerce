@@ -10,9 +10,12 @@ import { syncAllPendingTransactions, syncTransactionStatus } from '../lib/servic
 import { supabase } from '../lib/supabase/client';
 
 const app = express();
-const port = Number(process.env.PORT || process.env.PORT_BACKEND || 3001);
+const port = Number(process.env.PORT || 3001);
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/$/, '');
-const frontUrl = normalizeOrigin(process.env.FRONT_URL || 'http://localhost:5173');
+const frontendUrl = process.env.VERCEL
+  ? process.env.FRONTEND_URL
+  : process.env.FRONTEND_LOCAL_URL;
+const frontUrl = normalizeOrigin(frontendUrl || 'http://localhost:5173');
 const corsOrigins = new Set(
   [frontUrl, ...(process.env.CORS_ORIGINS || '').split(',')]
     .map((origin) => normalizeOrigin(origin))
@@ -43,7 +46,7 @@ app.use((req, res, next) => {
 
 app.get('/api/health', (_req, res) => {
   const requiredEnv = [
-    'FRONT_URL',
+    process.env.VERCEL ? 'FRONTEND_URL' : 'FRONTEND_LOCAL_URL',
     'JWT_SECRET',
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',

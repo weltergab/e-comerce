@@ -1,7 +1,11 @@
-const useRemoteBackend = import.meta.env.USE_REMOTE_BACKEND === 'true';
-const apiBaseUrl = useRemoteBackend
-  ? import.meta.env.BACKEND_URL?.replace(/\/$/, '') || ''
-  : '';
+const localHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
+const isLocalFrontend =
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' && localHosts.has(window.location.hostname));
+
+const apiBaseUrl = isLocalFrontend
+  ? import.meta.env.BACKEND_LOCAL_URL?.replace(/\/$/, '') || 'http://localhost:3001'
+  : import.meta.env.BACKEND_URL?.replace(/\/$/, '') || '';
 
 export function apiUrl(path: string) {
   return `${apiBaseUrl}${path}`;

@@ -3,7 +3,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/$/, '');
 
 function getAllowedOrigins() {
-  const frontUrl = normalizeOrigin(process.env.FRONT_URL || 'http://localhost:5173');
+  const frontendUrl = process.env.VERCEL
+    ? process.env.FRONTEND_URL
+    : process.env.FRONTEND_LOCAL_URL;
+  const frontUrl = normalizeOrigin(frontendUrl || 'http://localhost:5173');
   return new Set(
     [frontUrl, ...(process.env.CORS_ORIGINS || '').split(',')]
       .map((origin) => normalizeOrigin(origin))
@@ -29,7 +32,7 @@ export function applyCors(req: IncomingMessage, res: ServerResponse) {
 
 export function getEnvStatus() {
   const requiredEnv = [
-    'FRONT_URL',
+    process.env.VERCEL ? 'FRONTEND_URL' : 'FRONTEND_LOCAL_URL',
     'JWT_SECRET',
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',
@@ -41,7 +44,10 @@ export function getEnvStatus() {
     ok: requiredEnv.every((key) => Boolean(process.env[key])),
     env: Object.fromEntries(requiredEnv.map((key) => [key, Boolean(process.env[key])])),
     cors: {
-      frontUrl: normalizeOrigin(process.env.FRONT_URL || 'http://localhost:5173'),
+      frontUrl: normalizeOrigin(
+        (process.env.VERCEL ? process.env.FRONTEND_URL : process.env.FRONTEND_LOCAL_URL) ||
+          'http://localhost:5173'
+      ),
       origins: [...getAllowedOrigins()],
     },
   };
