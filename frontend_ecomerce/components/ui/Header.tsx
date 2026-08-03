@@ -8,7 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { MenuIcon, CloseIcon } from '@/components/ui/Icons';
+import { Menu, ShoppingCart, X } from 'lucide-react';
 
 export const Header = () => {
   const { items } = useCart();
@@ -137,11 +137,7 @@ export const Header = () => {
               className="relative"
               style={{ color: 'var(--color-text)' }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
+              <ShoppingCart size={24} strokeWidth={1.5} />
               {itemCount > 0 && (
                 <span
                   className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
@@ -159,7 +155,7 @@ export const Header = () => {
               style={{ color: 'var(--color-text)' }}
               aria-label="Toggle menu"
             >
-              {isMenuOpen ? <CloseIcon size={24} /> : <MenuIcon size={24} />}
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>

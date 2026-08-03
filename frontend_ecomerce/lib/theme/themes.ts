@@ -25,7 +25,7 @@ export const themes: Record<ThemeMode, Theme> = {
       specialText: '#171717',
 
       text: '#171717',
-      textSecondary: '#525252',
+      textSecondary: '#404040',
       textMuted: '#a3a3a3',
 
       // Cores de botoes deste tema.
