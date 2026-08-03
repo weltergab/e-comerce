@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { applyCors, getEnvStatus } from './_handler';
+import { getEnvStatus } from '../lib/config/cors';
+import { applyCors } from '../lib/vercel/handler';
 
 export default function handler(req: IncomingMessage, res: ServerResponse) {
   applyCors(req, res);

@@ -5,37 +5,19 @@ import Stripe from 'stripe';
 import { stripe } from '../lib/stripe/client';
 import { authenticateAdmin, authenticateRequest } from '../lib/auth/middleware';
 import { signToken } from '../lib/auth/jwt';
+import { applyCorsHeaders, getEnvStatus, getFrontendBaseUrl } from '../lib/config/cors';
 import { updateStock } from '../lib/services/stock';
 import { syncAllPendingTransactions, syncTransactionStatus } from '../lib/services/transactions';
 import { supabase } from '../lib/supabase/client';
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
-const normalizeOrigin = (origin: string) => origin.trim().replace(/\/$/, '');
-const frontendUrl = process.env.VERCEL
-  ? process.env.FRONTEND_URL
-  : process.env.FRONTEND_LOCAL_URL;
-const frontUrl = normalizeOrigin(frontendUrl || 'http://localhost:5173');
-const corsOrigins = new Set(
-  [frontUrl, ...(process.env.CORS_ORIGINS || '').split(',')]
-    .map((origin) => normalizeOrigin(origin))
-    .filter(Boolean)
-);
+const frontUrl = getFrontendBaseUrl();
 const sendError = (res: Response, status: number, error: string) =>
   res.status(status).json({ error });
 
 app.use((req, res, next) => {
-  const origin = req.headers.origin ? normalizeOrigin(req.headers.origin) : null;
-
-  if (!origin) {
-    res.header('Access-Control-Allow-Origin', frontUrl);
-  } else if (corsOrigins.has(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-
-  res.header('Vary', 'Origin');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Stripe-Signature, Cache-Control');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  applyCorsHeaders(req.headers.origin, (name, value) => res.header(name, value));
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
@@ -45,24 +27,10 @@ app.use((req, res, next) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  const requiredEnv = [
-    process.env.VERCEL ? 'FRONTEND_URL' : 'FRONTEND_LOCAL_URL',
-    'JWT_SECRET',
-    'SUPABASE_URL',
-    'SUPABASE_ANON_KEY',
-    'STRIPE_SECRET_KEY',
-    'STRIPE_WEBHOOK_SECRET',
-  ];
-
   res.json({
-    ok: requiredEnv.every((key) => Boolean(process.env[key])),
     service: 'storecy-backend',
     checkedAt: new Date().toISOString(),
-    env: Object.fromEntries(requiredEnv.map((key) => [key, Boolean(process.env[key])])),
-    cors: {
-      frontUrl,
-      origins: [...corsOrigins],
-    },
+    ...getEnvStatus(),
   });
 });
 
