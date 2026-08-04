@@ -166,18 +166,3 @@ VALUES (
   'Homepage introduction header phrases'
 )
 ON CONFLICT (key) DO NOTHING;
--- =========================================================
--- Optional: promote a registered user to admin
--- =========================================================
--- 1. Register normally in the app.
--- 2. Replace the email below with the admin email.
--- 3. Uncomment and run the UPDATE.
-
--- UPDATE users
--- SET is_admin = TRUE
--- WHERE email = 'admin@example.com';
-
--- Check admins:
-SELECT id, email, username, is_admin, created_at
-FROM users
-WHERE is_admin = TRUE;

@@ -221,6 +221,9 @@ export default function AdminPage() {
               <p style={{ color: 'var(--color-textSecondary)' }}>
                 Bem-vindo, {user?.username}
               </p>
+              <p style={{ color: 'var(--color-textSecondary)' }}>
+                Sistema completo com gerenciamento de estoque e controle de transações. Além disso, possui integração com a gigante plataforma de pagamentos Stripe que traz uma infraestrutura para transações seguras.
+              </p>
             </div>
             <div className="flex gap-3">
               <Button
