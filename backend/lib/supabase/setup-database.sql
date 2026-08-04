@@ -46,3 +46,38 @@ CREATE POLICY "Users can update own data" ON users
   FOR UPDATE
   USING (true)
   WITH CHECK (true);
+
+-- =========================================================
+-- Parameters
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS parameters (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  description TEXT DEFAULT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_parameters_updated_at ON parameters(updated_at DESC);
+
+DROP TRIGGER IF EXISTS parameters_updated_at_trigger ON parameters;
+CREATE TRIGGER parameters_updated_at_trigger
+BEFORE UPDATE ON parameters
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE parameters IS 'Store configuration parameters';
+COMMENT ON COLUMN parameters.key IS 'Unique parameter key';
+COMMENT ON COLUMN parameters.value IS 'Parameter value stored as JSON';
+COMMENT ON COLUMN parameters.description IS 'Human-readable parameter description';
+
+GRANT SELECT, INSERT, UPDATE ON public.parameters TO anon, authenticated;
+
+INSERT INTO parameters (key, value, description)
+VALUES (
+  'introduction_header',
+  '{"miniText":"Storecy","title":"Produtos escolhidos para simplificar sua rotina","subtitle":"Tecnologia, praticidade e compra segura em um so lugar.","description":"Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao."}'::jsonb,
+  'Homepage introduction header phrases'
+)
+ON CONFLICT (key) DO NOTHING;

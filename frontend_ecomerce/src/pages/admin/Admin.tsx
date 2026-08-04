@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { AdminProductCard } from '@/components/admin/AdminProductCard';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
-import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, Image } from 'lucide-react';
+import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, Image, MessageSquare } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
 
 interface User {
@@ -50,6 +50,13 @@ interface HealthCheck {
   };
 }
 
+interface IntroductionHeaderContent {
+  title: string;
+  subtitle: string;
+  description: string;
+  miniText: string;
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,6 +64,7 @@ export default function AdminPage() {
   const [healthLoading, setHealthLoading] = useState(false);
   const [healthCheck, setHealthCheck] = useState<HealthCheck | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showIntroModal, setShowIntroModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const navigate = useNavigate();
 
@@ -222,6 +230,15 @@ export default function AdminPage() {
                 disabled={healthLoading}
               >
                 {healthLoading ? 'Verificando...' : 'Verificar Conexoes'}
+              </Button>
+              <Button
+                onClick={() => setShowIntroModal(true)}
+                variant="outline"
+                size="md"
+                className="inline-flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Editar Frases
               </Button>
               <Button
                 onClick={() => navigate('/admin/transactions')}
@@ -405,6 +422,10 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {showIntroModal && (
+        <IntroductionHeaderModal onClose={() => setShowIntroModal(false)} />
+      )}
 
       {/* Create Modal */}
       {showCreateModal && (
@@ -736,6 +757,207 @@ function ProductModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
+  const defaultForm: IntroductionHeaderContent = {
+    miniText: 'Storecy',
+    title: 'Produtos escolhidos para simplificar sua rotina',
+    subtitle: 'Tecnologia, praticidade e compra segura em um so lugar.',
+    description:
+      'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao.',
+  };
+  const [formData, setFormData] = useState<IntroductionHeaderContent>(defaultForm);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const loadParameter = async () => {
+      const token = localStorage.getItem('auth_token');
+
+      try {
+        const response = await apiFetch('/api/admin/parameters/introduction-header', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          setFormData({
+            ...defaultForm,
+            ...(data.parameter?.value || {}),
+          });
+        } else {
+          alert(data.error || 'Erro ao carregar frases');
+        }
+      } catch (error) {
+        console.error('Error loading introduction header parameter:', error);
+        alert('Erro ao carregar frases');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadParameter();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('auth_token');
+    setSaving(true);
+
+    try {
+      const response = await apiFetch('/api/admin/parameters/introduction-header', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Erro ao salvar frases');
+        return;
+      }
+
+      alert('Frases salvas com sucesso!');
+      onClose();
+    } catch (error) {
+      console.error('Error saving introduction header parameter:', error);
+      alert('Erro ao salvar frases');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const fieldClass = 'w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2';
+  const fieldStyle = {
+    backgroundColor: 'var(--color-background)',
+    border: '1px solid var(--color-borderLight)',
+    color: 'var(--color-text)',
+  };
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center p-6 z-50"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      onClick={onClose}
+    >
+      <div
+        className="rounded-lg max-w-2xl w-full p-8 max-h-[85vh] overflow-y-auto"
+        style={{
+          backgroundColor: 'var(--color-background)',
+          border: '2px solid var(--color-borderLight)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-8">
+          <div className="flex items-center gap-3">
+            <div
+              className="p-3 rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-borderLight)',
+              }}
+            >
+              <MessageSquare className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+                Frases da Introducao
+              </h2>
+              <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
+                Textos exibidos no topo da pagina inicial
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            type="button"
+            className="text-3xl leading-none transition-colors p-2 rounded-lg"
+            style={{ color: 'var(--color-textSecondary)' }}
+          >
+            x
+          </button>
+        </div>
+
+        {loading ? (
+          <p style={{ color: 'var(--color-textSecondary)' }}>Carregando frases...</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Mini texto
+              </label>
+              <input
+                value={formData.miniText}
+                onChange={(e) => setFormData({ ...formData, miniText: e.target.value })}
+                className={fieldClass}
+                style={fieldStyle}
+                maxLength={80}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Titulo principal
+              </label>
+              <input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className={fieldClass}
+                style={fieldStyle}
+                maxLength={120}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Subtitulo
+              </label>
+              <input
+                value={formData.subtitle}
+                onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                className={fieldClass}
+                style={fieldStyle}
+                maxLength={160}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Descricao
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className={fieldClass}
+                style={{ ...fieldStyle, resize: 'vertical' }}
+                rows={4}
+                maxLength={360}
+                required
+              />
+            </div>
+
+            <div className="flex gap-4 pt-2">
+              <Button type="button" variant="secondary" fullWidth onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" fullWidth disabled={saving}>
+                {saving ? 'Salvando...' : 'Salvar Frases'}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

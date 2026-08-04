@@ -16,6 +16,30 @@ const frontUrl = getFrontendBaseUrl();
 const sendError = (res: Response, status: number, error: string) =>
   res.status(status).json({ error });
 
+const INTRODUCTION_HEADER_PARAMETER_KEY = 'introduction_header';
+const defaultIntroductionHeader = {
+  miniText: 'Storecy',
+  title: 'Produtos escolhidos para simplificar sua rotina',
+  subtitle: 'Tecnologia, praticidade e compra segura em um so lugar.',
+  description:
+    'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao.',
+};
+
+function sanitizeIntroductionHeader(input: any = {}) {
+  const toText = (value: unknown, fallback: string, maxLength: number) => {
+    if (typeof value !== 'string') return fallback;
+    const trimmed = value.trim();
+    return trimmed ? trimmed.slice(0, maxLength) : fallback;
+  };
+
+  return {
+    miniText: toText(input.miniText, defaultIntroductionHeader.miniText, 80),
+    title: toText(input.title, defaultIntroductionHeader.title, 120),
+    subtitle: toText(input.subtitle, defaultIntroductionHeader.subtitle, 160),
+    description: toText(input.description, defaultIntroductionHeader.description, 360),
+  };
+}
+
 app.use((req, res, next) => {
   applyCorsHeaders(req.headers.origin, (name, value) => res.header(name, value));
 
@@ -215,6 +239,29 @@ app.get('/api/auth/me', (req, res) => {
   const user = authenticateRequest(req);
   if (!user) return sendError(res, 401, 'Não autenticado');
   res.json({ user: { id: user.userId, email: user.email, username: user.username, isAdmin: user.isAdmin || false } });
+});
+
+app.get('/api/parameters/introduction-header', async (_req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('parameters')
+      .select('key, value, updated_at')
+      .eq('key', INTRODUCTION_HEADER_PARAMETER_KEY)
+      .maybeSingle();
+
+    if (error) return sendError(res, 500, error.message || 'Erro ao buscar parametros');
+
+    res.json({
+      parameter: {
+        key: INTRODUCTION_HEADER_PARAMETER_KEY,
+        value: sanitizeIntroductionHeader(data?.value || defaultIntroductionHeader),
+        updatedAt: data?.updated_at || null,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching introduction header parameter:', error);
+    sendError(res, 500, error.message || 'Erro ao buscar parametros');
+  }
 });
 
 app.get('/api/products', async (_req, res) => {
@@ -419,6 +466,65 @@ app.get('/api/admin/health', async (req, res) => {
       stripe: stripeStatus,
     },
   });
+});
+
+app.get('/api/admin/parameters/introduction-header', async (req, res) => {
+  if (!authenticateAdmin(req)) return sendError(res, 403, 'Acesso negado. Apenas administradores.');
+
+  try {
+    const { data, error } = await supabase
+      .from('parameters')
+      .select('key, value, updated_at')
+      .eq('key', INTRODUCTION_HEADER_PARAMETER_KEY)
+      .maybeSingle();
+
+    if (error) return sendError(res, 500, error.message || 'Erro ao buscar parametros');
+
+    res.json({
+      parameter: {
+        key: INTRODUCTION_HEADER_PARAMETER_KEY,
+        value: sanitizeIntroductionHeader(data?.value || defaultIntroductionHeader),
+        updatedAt: data?.updated_at || null,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching admin introduction header parameter:', error);
+    sendError(res, 500, error.message || 'Erro ao buscar parametros');
+  }
+});
+
+app.put('/api/admin/parameters/introduction-header', async (req, res) => {
+  if (!authenticateAdmin(req)) return sendError(res, 403, 'Acesso negado. Apenas administradores.');
+
+  try {
+    const value = sanitizeIntroductionHeader(req.body);
+    const { data, error } = await supabase
+      .from('parameters')
+      .upsert(
+        {
+          key: INTRODUCTION_HEADER_PARAMETER_KEY,
+          value,
+          description: 'Homepage introduction header phrases',
+        },
+        { onConflict: 'key' }
+      )
+      .select('key, value, updated_at')
+      .single();
+
+    if (error || !data) return sendError(res, 500, error?.message || 'Erro ao salvar parametros');
+
+    res.json({
+      success: true,
+      parameter: {
+        key: data.key,
+        value: sanitizeIntroductionHeader(data.value),
+        updatedAt: data.updated_at,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error saving introduction header parameter:', error);
+    sendError(res, 500, error.message || 'Erro ao salvar parametros');
+  }
 });
 
 app.post('/api/admin/products', async (req, res) => {
@@ -692,3 +798,4 @@ export function startServer() {
 }
 
 export default app;
+

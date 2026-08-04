@@ -5,6 +5,21 @@ Crie um projeto postgres no supabase.
 Use o sql para criar o banco que está em /database/create-database.sql
 Copie as keys em: .env.local
 
+-- =========================================================
+-- Optional: promote a registered user to admin
+-- =========================================================
+-- 1. Register normally in the app.  
+-- 2. Replace the email below with the admin email.  
+-- 3. Uncomment and run the UPDATE.  
+
+-- UPDATE users  
+-- SET is_admin = TRUE  
+-- WHERE email = 'admin@example.com';  
+
+-- Check admins:  
+SELECT id, email, username, is_admin, created_at  
+FROM users  
+WHERE is_admin = TRUE;  
 
 
 Na pasta do projeto (\ecomerceReact2):  
