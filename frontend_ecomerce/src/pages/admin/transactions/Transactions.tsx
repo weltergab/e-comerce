@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Calendar, FileText, CreditCard, Receipt, ClipboardList, User } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
@@ -30,11 +30,41 @@ interface Transaction {
   adminNotesUpdatedBy?: string | null;
 }
 
+interface TransactionFilters {
+  startDate: string;
+  endDate: string;
+  userName: string;
+  status: string;
+}
+
+const toDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const getDefaultFilters = (): TransactionFilters => {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 30);
+
+  return {
+    startDate: toDateInputValue(start),
+    endDate: toDateInputValue(end),
+    userName: '',
+    status: '',
+  };
+};
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [productNames, setProductNames] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<TransactionFilters>(() => getDefaultFilters());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,17 +114,23 @@ export default function TransactionsPage() {
         return;
       }
 
-      loadTransactions();
+      loadTransactions(getDefaultFilters());
     } catch (error) {
       console.error('Auth error:', error);
       navigate('/login');
     }
   };
 
-  const loadTransactions = async () => {
+  const loadTransactions = async (nextFilters = filters) => {
     const token = localStorage.getItem('auth_token');
+    const params = new URLSearchParams({
+      startDate: nextFilters.startDate,
+      endDate: nextFilters.endDate,
+    });
+
+    setSearching(true);
     try {
-      const response = await apiFetch('/api/admin/transactions', {
+      const response = await apiFetch(`/api/admin/transactions?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -107,9 +143,25 @@ export default function TransactionsPage() {
     } catch (error) {
       console.error('Error loading transactions:', error);
     } finally {
+      setSearching(false);
       setLoading(false);
     }
   };
+
+  const handleSearch = (event: FormEvent) => {
+    event.preventDefault();
+    setLoading(false);
+    loadTransactions(filters);
+  };
+
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesUserName = filters.userName.trim()
+      ? transaction.userName.toLowerCase().includes(filters.userName.trim().toLowerCase())
+      : true;
+    const matchesStatus = filters.status ? transaction.status === filters.status : true;
+
+    return matchesUserName && matchesStatus;
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -215,47 +267,106 @@ export default function TransactionsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <div
-            className="rounded-lg p-4"
-            style={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                  Total de Transações
-                </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-                  {transactions.length}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                  Transações Bem-Sucedidas
-                </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--color-success)' }}>
-                  {transactions.filter((t) => t.status === 'succeeded').length}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                  Valor Total
-                </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--color-success)' }}>
-                  {formatCurrency(
-                    transactions
-                      .filter((t) => t.status === 'succeeded')
-                      .reduce((sum, t) => sum + t.amount, 0),
-                    'BRL'
-                  )}
-                </p>
-              </div>
+        <form
+          onSubmit={handleSearch}
+          className="rounded-lg p-4 mb-6"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr_1fr_auto] gap-3 items-end">
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Data inicial
+              </label>
+              <input
+                type="date"
+                value={filters.startDate}
+                onChange={(event) => setFilters({ ...filters, startDate: event.target.value })}
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--color-background)',
+                  border: '1px solid var(--color-borderLight)',
+                  color: 'var(--color-text)',
+                }}
+                required
+              />
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Data final
+              </label>
+              <input
+                type="date"
+                value={filters.endDate}
+                onChange={(event) => setFilters({ ...filters, endDate: event.target.value })}
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--color-background)',
+                  border: '1px solid var(--color-borderLight)',
+                  color: 'var(--color-text)',
+                }}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Nome do usuário
+              </label>
+              <input
+                type="text"
+                value={filters.userName}
+                onChange={(event) => setFilters({ ...filters, userName: event.target.value })}
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--color-background)',
+                  border: '1px solid var(--color-borderLight)',
+                  color: 'var(--color-text)',
+                }}
+                placeholder="Buscar por nome"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+                Status
+              </label>
+              <select
+                value={filters.status}
+                onChange={(event) => setFilters({ ...filters, status: event.target.value })}
+                className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--color-background)',
+                  border: '1px solid var(--color-borderLight)',
+                  color: 'var(--color-text)',
+                }}
+              >
+                <option value="">Todos</option>
+                <option value="succeeded">Pago</option>
+                <option value="processing">Processando</option>
+                <option value="requires_payment_method">Aguardando pagamento</option>
+                <option value="requires_confirmation">Aguardando confirmação</option>
+                <option value="requires_action">Aguardando ação</option>
+                <option value="canceled">Cancelado</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              disabled={searching}
+              className="w-full lg:w-auto px-5 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'var(--color-primaryText)',
+              }}
+            >
+              {searching ? 'Pesquisando...' : 'Pesquisar'}
+            </button>
           </div>
-        </div>
+        </form>
 
         {/* Transactions Table */}
         <div
@@ -295,7 +406,7 @@ export default function TransactionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <tr
                     key={transaction.id}
                     className="transition-colors"
@@ -350,7 +461,7 @@ export default function TransactionsPage() {
             </table>
           </div>
 
-          {transactions.length === 0 && (
+          {filteredTransactions.length === 0 && (
             <div
               className="text-center py-12"
               style={{ color: 'var(--color-textMuted)' }}
@@ -476,12 +587,12 @@ function TransactionModal({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-6 z-50"
+      className="fixed inset-0 flex items-center justify-center p-2 sm:p-6 z-50"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
       onClick={onClose}
     >
       <div
-        className="rounded-lg max-w-3xl w-full p-8 max-h-[85vh] overflow-y-auto"
+        className="rounded-lg w-[calc(100vw-1rem)] sm:w-full max-w-5xl p-4 sm:p-6 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto"
         style={{
           backgroundColor: 'var(--color-background)',
           border: '2px solid var(--color-borderLight)',
@@ -489,7 +600,7 @@ function TransactionModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-start gap-4 mb-5">
           <div>
             <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--color-text)' }}>
               Detalhes da Transação
@@ -506,7 +617,7 @@ function TransactionModal({
           </div>
           <button
             onClick={onClose}
-            className="text-3xl leading-none transition-colors p-2 rounded-lg"
+            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
             style={{ color: 'var(--color-textSecondary)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'var(--color-error)';
@@ -517,14 +628,14 @@ function TransactionModal({
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            ×
+            x
           </button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Order Info */}
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-4 sm:p-5"
             style={{
               backgroundColor: 'var(--color-surface)',
               border: '1px solid var(--color-borderLight)',
@@ -566,7 +677,7 @@ function TransactionModal({
 
           {/* User Info */}
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-4 sm:p-5"
             style={{
               backgroundColor: 'var(--color-surface)',
               border: '1px solid var(--color-borderLight)',
@@ -596,7 +707,7 @@ function TransactionModal({
 
           {/* Admin Notes */}
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-4 sm:p-5"
             style={{
               backgroundColor: 'var(--color-surface)',
               border: transaction.adminNotes ? '2px solid var(--color-warning)' : '1px solid var(--color-borderLight)',
@@ -717,7 +828,7 @@ function TransactionModal({
                         <Calendar className="w-3 h-3" />
                         <p>
                           Última atualização: {formatDate(transaction.adminNotesUpdatedAt)}
-                          {transaction.adminNotesUpdatedBy && ` • por ${transaction.adminNotesUpdatedBy}`}
+                          {transaction.adminNotesUpdatedBy && ` - por ${transaction.adminNotesUpdatedBy}`}
                         </p>
                       </div>
                     )}
@@ -733,7 +844,7 @@ function TransactionModal({
 
           {/* Products */}
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-4 sm:p-5"
             style={{
               backgroundColor: 'var(--color-surface)',
               border: '1px solid var(--color-borderLight)',
@@ -784,7 +895,7 @@ function TransactionModal({
           {/* Boleto Button - if boleto payment and URL available */}
           {transaction.paymentMethod === 'boleto' && transaction.boletoUrl && (
             <div
-              className="rounded-lg p-6"
+              className="rounded-lg p-4 sm:p-5"
               style={{
                 backgroundColor: 'var(--color-surface)',
                 border: '2px solid var(--color-primary)',
@@ -833,7 +944,7 @@ function TransactionModal({
 
           {/* Total */}
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-4 sm:p-5"
             style={{
               backgroundColor: 'var(--color-surface)',
               border: '2px solid var(--color-borderLight)',

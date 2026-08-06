@@ -2,13 +2,41 @@
 
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Menu, ShoppingCart, X } from 'lucide-react';
+
+function MobileMenuLink({
+  to,
+  children,
+  onClick,
+  highlight = false,
+}: {
+  to: string;
+  children: ReactNode;
+  onClick: () => void;
+  highlight?: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold transition-colors"
+      style={{
+        color: highlight ? 'var(--color-accentText)' : 'var(--color-text)',
+        backgroundColor: highlight ? 'var(--color-accent)' : 'var(--color-background)',
+        border: '1px solid var(--color-borderLight)',
+      }}
+      onClick={onClick}
+    >
+      <span>{children}</span>
+      <span style={{ color: highlight ? 'var(--color-accentText)' : 'var(--color-textMuted)' }}>{'>'}</span>
+    </Link>
+  );
+}
 
 export const Header = () => {
   const { items } = useCart();
@@ -127,7 +155,7 @@ export const Header = () => {
           </nav>
 
           {/* Mobile Navigation - 4 items in a row */}
-          <div className="flex lg:hidden items-center space-x-4">
+          <div className="flex lg:hidden items-center gap-2">
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -151,9 +179,9 @@ export const Header = () => {
             {/* Menu Toggle */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-1"
+              className="p-2 rounded-lg"
               style={{ color: 'var(--color-text)' }}
-              aria-label="Toggle menu"
+              aria-label="Abrir menu"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -170,41 +198,28 @@ export const Header = () => {
             borderTop: '1px solid var(--color-border)',
           }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3">
-            <Link
-              to="/"
-              className="block py-2 font-medium"
-              style={{ color: 'var(--color-textSecondary)' }}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Produtos
-            </Link>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+            <div className="grid gap-2">
+              <MobileMenuLink to="/" onClick={() => setIsMenuOpen(false)}>
+                Produtos
+              </MobileMenuLink>
             {user && (
-              <Link
-                to="/my-orders"
-                className="block py-2 font-medium"
-                style={{ color: 'var(--color-textSecondary)' }}
-                onClick={() => setIsMenuOpen(false)}
-              >
+              <MobileMenuLink to="/my-orders" onClick={() => setIsMenuOpen(false)}>
                 Meus Pedidos
-              </Link>
+              </MobileMenuLink>
             )}
             {user?.isAdmin && (
-              <Link
-                to="/admin"
-                className="block py-2 font-medium"
-                style={{ color: 'var(--color-textSecondary)' }}
-                onClick={() => setIsMenuOpen(false)}
-              >
+              <MobileMenuLink to="/admin" onClick={() => setIsMenuOpen(false)} highlight>
                 Admin
-              </Link>
+              </MobileMenuLink>
             )}
+            </div>
 
-            <div className="pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
               {user ? (
-                <div className="space-y-3">
+                <div className="grid gap-3">
                   <div
-                    className="text-sm"
+                    className="text-sm rounded-lg px-3 py-2"
                     style={{ color: 'var(--color-textSecondary)' }}
                   >
                     Olá, <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{user.username}</span>
@@ -222,7 +237,7 @@ export const Header = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" size="sm" fullWidth>
                       Login

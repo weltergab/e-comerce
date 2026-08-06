@@ -210,8 +210,8 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+            <div className="min-w-0">
               <h1
                 className="text-3xl font-bold mb-2"
                 style={{ color: 'var(--color-text)' }}
@@ -225,20 +225,21 @@ export default function AdminPage() {
                 Sistema completo com gerenciamento de estoque e controle de transações. Além disso, possui integração com a gigante plataforma de pagamentos Stripe que traz uma infraestrutura para transações seguras.
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-3 w-full lg:w-auto">
               <Button
                 onClick={handleCheckHealth}
                 variant="outline"
                 size="md"
                 disabled={healthLoading}
+                className="w-full lg:w-auto"
               >
-                {healthLoading ? 'Verificando...' : 'Verificar Conexoes'}
+                {healthLoading ? 'Verificando...' : 'Verificar Conexões'}
               </Button>
               <Button
                 onClick={() => setShowIntroModal(true)}
                 variant="outline"
                 size="md"
-                className="inline-flex items-center gap-2"
+                className="w-full lg:w-auto inline-flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" />
                 Editar Frases
@@ -247,6 +248,7 @@ export default function AdminPage() {
                 onClick={() => navigate('/admin/transactions')}
                 variant="outline"
                 size="md"
+                className="w-full lg:w-auto"
               >
                 Ver Transações
               </Button>
@@ -254,6 +256,7 @@ export default function AdminPage() {
                 onClick={() => setShowCreateModal(true)}
                 variant="primary"
                 size="md"
+                className="w-full lg:w-auto"
               >
                 + Novo Produto
               </Button>
@@ -270,7 +273,7 @@ export default function AdminPage() {
             >
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
                 <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-                  Status das Conexoes
+                  Status das Conexões
                 </h2>
                 <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
                   Atualizado em {new Date(healthCheck.checkedAt).toLocaleString('pt-BR')}
@@ -388,7 +391,7 @@ export default function AdminPage() {
 
         {/* Section Title */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+          <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
             Gerenciar Produtos
           </h2>
         </div>
@@ -522,22 +525,22 @@ function ProductModal({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-6 z-50"
+      className="fixed inset-0 flex items-center justify-center p-2 sm:p-6 z-50"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
       onClick={onClose}
     >
       <div
-        className="rounded-lg max-w-2xl w-full p-8 max-h-[85vh] overflow-y-auto"
+        className="rounded-lg w-[calc(100vw-1rem)] sm:w-full max-w-4xl p-4 sm:p-6 max-h-[94vh] sm:max-h-[88vh] overflow-y-auto"
         style={{
           backgroundColor: 'var(--color-background)',
           border: '2px solid var(--color-borderLight)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start mb-8">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-start gap-3 mb-5">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className="p-3 rounded-lg"
+              className="hidden sm:block p-3 rounded-lg"
               style={{
                 backgroundColor: 'var(--color-surface)',
                 border: '1px solid var(--color-borderLight)',
@@ -546,7 +549,7 @@ function ProductModal({
               <Package className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+              <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
                 {product ? 'Editar Produto' : 'Novo Produto'}
               </h2>
               <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
@@ -557,7 +560,7 @@ function ProductModal({
           <button
             onClick={onClose}
             type="button"
-            className="text-3xl leading-none transition-colors p-2 rounded-lg"
+            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
             style={{ color: 'var(--color-textSecondary)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'var(--color-error)';
@@ -572,15 +575,15 @@ function ProductModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-3 sm:p-5"
             style={{
               backgroundColor: 'var(--color-surface)',
               border: '1px solid var(--color-borderLight)',
             }}
           >
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Tag className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
@@ -595,7 +598,7 @@ function ProductModal({
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2"
                   style={{
                     backgroundColor: 'var(--color-background)',
                     border: '1px solid var(--color-borderLight)',
@@ -617,19 +620,19 @@ function ProductModal({
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2"
                   style={{
                     backgroundColor: 'var(--color-background)',
                     border: '1px solid var(--color-borderLight)',
                     color: 'var(--color-text)',
                     resize: 'vertical',
                   }}
-                  rows={4}
+                  rows={3}
                   placeholder="Descreva o produto..."
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSign className="w-4 h-4" style={{ color: 'var(--color-success)' }} />
@@ -645,7 +648,7 @@ function ProductModal({
                     onChange={(e) =>
                       setFormData({ ...formData, price: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: 'var(--color-background)',
                       border: '1px solid var(--color-borderLight)',
@@ -669,7 +672,7 @@ function ProductModal({
                     onChange={(e) =>
                       setFormData({ ...formData, stock: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2"
                     style={{
                       backgroundColor: 'var(--color-background)',
                       border: '1px solid var(--color-borderLight)',
@@ -693,7 +696,7 @@ function ProductModal({
                   onChange={(e) =>
                     setFormData({ ...formData, images: e.target.value })
                   }
-                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2"
                   style={{
                     backgroundColor: 'var(--color-background)',
                     border: '1px solid var(--color-borderLight)',
@@ -706,7 +709,7 @@ function ProductModal({
                     <img
                       src={formData.images}
                       alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg"
+                      className="w-full h-36 sm:h-48 object-cover rounded-lg"
                       style={{ border: '1px solid var(--color-borderLight)' }}
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -718,11 +721,11 @@ function ProductModal({
             </div>
           </div>
 
-          <div className="flex gap-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors"
+              className="w-full px-5 py-3 rounded-lg font-semibold transition-colors"
               style={{
                 backgroundColor: 'var(--color-background)',
                 border: '1px solid var(--color-borderLight)',
@@ -740,7 +743,7 @@ function ProductModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-5 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'var(--color-primaryText)',
@@ -769,9 +772,9 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
   const defaultForm: IntroductionHeaderContent = {
     miniText: 'Storecy',
     title: 'Produtos escolhidos para simplificar sua rotina',
-    subtitle: 'Tecnologia, praticidade e compra segura em um so lugar.',
+    subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
     description:
-      'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao.',
+      'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiência direta para comprar sem complicação.',
   };
   const [formData, setFormData] = useState<IntroductionHeaderContent>(defaultForm);
   const [loading, setLoading] = useState(true);
@@ -848,22 +851,22 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-6 z-50"
+      className="fixed inset-0 flex items-center justify-center p-2 sm:p-6 z-50"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
       onClick={onClose}
     >
       <div
-        className="rounded-lg max-w-2xl w-full p-8 max-h-[85vh] overflow-y-auto"
+        className="rounded-lg w-[calc(100vw-1rem)] sm:w-full max-w-4xl p-4 sm:p-6 max-h-[94vh] sm:max-h-[88vh] overflow-y-auto"
         style={{
           backgroundColor: 'var(--color-background)',
           border: '2px solid var(--color-borderLight)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start mb-8">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-start gap-3 mb-5">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className="p-3 rounded-lg"
+              className="hidden sm:block p-3 rounded-lg"
               style={{
                 backgroundColor: 'var(--color-surface)',
                 border: '1px solid var(--color-borderLight)',
@@ -872,28 +875,28 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
               <MessageSquare className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-                Frases da Introducao
+              <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+                Frases da Introdução
               </h2>
               <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                Textos exibidos no topo da pagina inicial
+                Textos exibidos no topo da página inicial
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             type="button"
-            className="text-3xl leading-none transition-colors p-2 rounded-lg"
+            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
             style={{ color: 'var(--color-textSecondary)' }}
           >
-            x
+            ×
           </button>
         </div>
 
         {loading ? (
           <p style={{ color: 'var(--color-textSecondary)' }}>Carregando frases...</p>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
                 Mini texto
@@ -938,20 +941,20 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
 
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                Descricao
+                Descrição
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className={fieldClass}
                 style={{ ...fieldStyle, resize: 'vertical' }}
-                rows={4}
+                rows={3}
                 maxLength={360}
                 required
               />
             </div>
 
-            <div className="flex gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <Button type="button" variant="secondary" fullWidth onClick={onClose}>
                 Cancelar
               </Button>

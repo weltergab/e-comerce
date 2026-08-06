@@ -23,7 +23,7 @@ export default function SuccessContent() {
       return;
     }
 
-    // Plano B do webhook Stripe: se o webhook atrasar/falhar, a pagina de sucesso
+    // Plano B do webhook Stripe: se o webhook atrasar/falhar, a página de sucesso
     // pede ao backend para confirmar o PaymentIntent direto na Stripe e gravar o pedido.
     const confirmPayment = async () => {
       try {
@@ -84,7 +84,7 @@ export default function SuccessContent() {
             Seu pedido foi processado com sucesso.
           </p>
           <p className="text-gray-600 mb-8">
-            Voce recebera um email de confirmacao em breve.
+            Você receberá um email de confirmação em breve.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -17,9 +17,9 @@ interface IntroductionHeaderContent {
 const defaultIntroductionHeader: IntroductionHeaderContent = {
   miniText: 'Storecy',
   title: 'Produtos escolhidos para simplificar sua rotina',
-  subtitle: 'Tecnologia, praticidade e compra segura em um so lugar.',
+  subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
   description:
-    'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao.',
+    'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiência direta para comprar sem complicação.',
 };
 
 export default function Home() {

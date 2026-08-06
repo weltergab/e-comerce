@@ -77,7 +77,7 @@ GRANT SELECT, INSERT, UPDATE ON public.parameters TO anon, authenticated;
 INSERT INTO parameters (key, value, description)
 VALUES (
   'introduction_header',
-  '{"miniText":"Storecy","title":"Produtos escolhidos para simplificar sua rotina","subtitle":"Tecnologia, praticidade e compra segura em um so lugar.","description":"Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao."}'::jsonb,
+  '{"miniText":"Storecy","title":"Produtos escolhidos para simplificar sua rotina","subtitle":"Tecnologia, praticidade e compra segura em um só lugar.","description":"Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiência direta para comprar sem complicação."}'::jsonb,
   'Homepage introduction header phrases'
 )
 ON CONFLICT (key) DO NOTHING;

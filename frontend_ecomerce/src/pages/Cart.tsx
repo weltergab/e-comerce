@@ -31,13 +31,13 @@ export default function CartPage() {
     <PageContainer>
       <PageHeader title="Carrinho de Compras" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 min-w-0">
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <Card key={item.product.id}>
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <div className="w-24 h-24 rounded overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--color-borderLight)' }}>
+            <Card key={item.product.id} className="min-w-0">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 min-w-0">
+                  <div className="w-full h-40 sm:w-24 sm:h-24 rounded overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--color-borderLight)' }}>
                     {item.product.image ? (
                       <img
                         src={item.product.image}
@@ -51,8 +51,8 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  <div className="flex-1">
-                    <h3 className="font-bold mb-1">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold mb-1 break-words">
                       {item.product.name}
                     </h3>
                     <p className="text-sm mb-2" style={{ color: 'var(--color-textSecondary)' }}>
@@ -63,8 +63,8 @@ export default function CartPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-end justify-between gap-2">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:items-end justify-between gap-3 min-w-0">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                       <Button
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                         variant="outline"
@@ -85,7 +85,7 @@ export default function CartPage() {
                       </Button>
                     </div>
 
-                    <p className="font-bold text-lg">
+                    <p className="font-bold text-lg sm:text-right break-words">
                       {formatCurrency(item.product.price * item.quantity)}
                     </p>
 
@@ -93,6 +93,7 @@ export default function CartPage() {
                       onClick={() => removeItem(item.product.id)}
                       variant="danger"
                       size="sm"
+                      className="w-full sm:w-auto"
                     >
                       Remover
                     </Button>

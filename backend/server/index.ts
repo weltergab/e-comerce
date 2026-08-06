@@ -20,9 +20,9 @@ const INTRODUCTION_HEADER_PARAMETER_KEY = 'introduction_header';
 const defaultIntroductionHeader = {
   miniText: 'Storecy',
   title: 'Produtos escolhidos para simplificar sua rotina',
-  subtitle: 'Tecnologia, praticidade e compra segura em um so lugar.',
+  subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
   description:
-    'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiencia direta para comprar sem complicacao.',
+    'Encontre itens selecionados com pagamento integrado, estoque atualizado e uma experiência direta para comprar sem complicação.',
 };
 
 function sanitizeIntroductionHeader(input: any = {}) {
@@ -656,20 +656,44 @@ app.get('/api/admin/transactions', async (req, res) => {
     const { data: userData } = await supabase.from('users').select('is_admin').eq('id', user.userId).single();
     if (!userData?.is_admin) return sendError(res, 403, 'Acesso negado. Apenas administradores.');
 
+    const today = new Date();
+    const defaultEndDate = today.toISOString().slice(0, 10);
+    const defaultStart = new Date(today);
+    defaultStart.setDate(defaultStart.getDate() - 30);
+    const defaultStartDate = defaultStart.toISOString().slice(0, 10);
+
+    const startDate = typeof req.query.startDate === 'string' && req.query.startDate
+      ? req.query.startDate
+      : defaultStartDate;
+    const endDate = typeof req.query.endDate === 'string' && req.query.endDate
+      ? req.query.endDate
+      : defaultEndDate;
+    const startDateTime = new Date(`${startDate}T00:00:00.000Z`);
+    const endDateTime = new Date(`${endDate}T23:59:59.999Z`);
+
+    if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) {
+      return sendError(res, 400, 'Período inválido');
+    }
+
     await syncAllPendingTransactions();
     const { data: transactions, error } = await supabase
       .from('transactions')
       .select('*')
+      .gte('created_at', startDateTime.toISOString())
+      .lte('created_at', endDateTime.toISOString())
       .order('created_at', { ascending: false });
 
     if (error || !transactions) return sendError(res, 500, 'Erro ao buscar transações');
-    res.json({ transactions: transactions.map(formatTransaction), total: transactions.length });
+    res.json({
+      transactions: transactions.map(formatTransaction),
+      total: transactions.length,
+      filters: { startDate, endDate },
+    });
   } catch (error: any) {
     console.error('Error in transactions API:', error);
     sendError(res, 500, error.message || 'Erro ao processar requisição');
   }
 });
-
 app.patch('/api/admin/transactions/:id', async (req, res) => {
   const user = authenticateRequest(req);
   if (!user) return sendError(res, 401, 'Não autenticado');

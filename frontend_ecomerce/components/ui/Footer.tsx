@@ -21,7 +21,7 @@ export function Footer() {
               TechStore
             </Link>
             <p className="max-w-md text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-              Tecnologia, pedidos rastreaveis e pagamento seguro em uma experiencia simples.
+              Tecnologia, pedidos rastreáveis e pagamento seguro em uma experiência simples.
             </p>
           </div>
 
