@@ -1,5 +1,6 @@
 import '../lib/config/env';
 import express, { Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import Stripe from 'stripe';
 import { stripe } from '../lib/stripe/client';
@@ -8,7 +9,7 @@ import { signToken } from '../lib/auth/jwt';
 import { applyCorsHeaders, getEnvStatus, getFrontendBaseUrl } from '../lib/config/cors';
 import { updateStock } from '../lib/services/stock';
 import { syncAllPendingTransactions, syncTransactionStatus } from '../lib/services/transactions';
-import { supabase } from '../lib/supabase/client';
+import { getSupabaseAdmin, supabase } from '../lib/supabase/client';
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
@@ -17,6 +18,9 @@ const sendError = (res: Response, status: number, error: string) =>
   res.status(status).json({ error });
 
 const INTRODUCTION_HEADER_PARAMETER_KEY = 'introduction_header';
+const PRODUCT_IMAGES_BUCKET = 'product-images';
+const MAX_PRODUCT_IMAGE_UPLOAD_BYTES = 500 * 1024;
+const ALLOWED_PRODUCT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const defaultIntroductionHeader = {
   miniText: 'Storecy',
   title: 'Produtos escolhidos para simplificar sua rotina',
@@ -38,6 +42,25 @@ function sanitizeIntroductionHeader(input: any = {}) {
     subtitle: toText(input.subtitle, defaultIntroductionHeader.subtitle, 160),
     description: toText(input.description, defaultIntroductionHeader.description, 360),
   };
+}
+
+function sanitizeProductImages(images: unknown) {
+  if (!Array.isArray(images)) return [];
+
+  return images
+    .filter((image): image is string => typeof image === 'string')
+    .map((image) => image.trim())
+    .filter(Boolean);
+}
+
+function getStorageExtension(fileName: string, contentType: string) {
+  const fromName = fileName.split('.').pop()?.toLowerCase();
+  if (fromName && /^[a-z0-9]+$/.test(fromName)) return fromName;
+
+  if (contentType === 'image/png') return 'png';
+  if (contentType === 'image/webp') return 'webp';
+  if (contentType === 'image/gif') return 'gif';
+  return 'jpg';
 }
 
 app.use((req, res, next) => {
@@ -134,7 +157,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
   }
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -276,6 +299,7 @@ app.get('/api/products', async (_req, res) => {
         description: p.description,
         price: p.price?.unit_amount ? p.price.unit_amount / 100 : 0,
         image: p.image,
+        images: p.images,
         category: p.category,
         stock: p.stock,
         stripePriceId: p.stripePriceId,
@@ -527,6 +551,50 @@ app.put('/api/admin/parameters/introduction-header', async (req, res) => {
   }
 });
 
+app.post('/api/admin/uploads/product-images', async (req, res) => {
+  if (!authenticateAdmin(req)) return sendError(res, 403, 'Acesso negado. Apenas administradores.');
+
+  try {
+    const { fileName, contentType, base64 } = req.body || {};
+    if (typeof fileName !== 'string' || typeof contentType !== 'string' || typeof base64 !== 'string') {
+      return sendError(res, 400, 'Arquivo inválido');
+    }
+    if (!ALLOWED_PRODUCT_IMAGE_TYPES.has(contentType)) {
+      return sendError(res, 400, 'Formato de imagem inválido');
+    }
+
+    const cleanBase64 = base64.includes(',') ? base64.split(',').pop() || '' : base64;
+    const fileBuffer = Buffer.from(cleanBase64, 'base64');
+    if (!fileBuffer.length) return sendError(res, 400, 'Arquivo vazio');
+    if (fileBuffer.length > MAX_PRODUCT_IMAGE_UPLOAD_BYTES) {
+      return sendError(res, 400, 'A imagem deve ter no máximo 500KB');
+    }
+
+    const extension = getStorageExtension(fileName, contentType);
+    const storagePath = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .upload(storagePath, fileBuffer, {
+        contentType,
+        upsert: false,
+      });
+
+    if (error) return sendError(res, 500, error.message || 'Erro ao enviar imagem');
+
+    const { data } = supabaseAdmin.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(storagePath);
+    res.json({
+      success: true,
+      url: data.publicUrl,
+      path: storagePath,
+      size: fileBuffer.length,
+    });
+  } catch (error: any) {
+    console.error('Error uploading product image:', error);
+    sendError(res, 500, error.message || 'Erro ao enviar imagem');
+  }
+});
+
 app.post('/api/admin/products', async (req, res) => {
   if (!authenticateAdmin(req)) return sendError(res, 403, 'Acesso negado. Apenas administradores.');
 
@@ -538,7 +606,7 @@ app.post('/api/admin/products', async (req, res) => {
     const product = await stripe.products.create({
       name,
       description: description || undefined,
-      images: images || [],
+      images: sanitizeProductImages(images),
       metadata: { stock: stock?.toString() || '0' },
     });
     const priceObj = await stripe.prices.create({ product: product.id, unit_amount: Math.round(price * 100), currency });
@@ -571,7 +639,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
     const updateData: Stripe.ProductUpdateParams = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
-    if (images !== undefined) updateData.images = images;
+    if (images !== undefined) updateData.images = sanitizeProductImages(images);
     if (active !== undefined) updateData.active = active;
     if (stock !== undefined) updateData.metadata = { stock: stock.toString() };
     await stripe.products.update(req.params.id, updateData);

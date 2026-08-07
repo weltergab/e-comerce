@@ -4,6 +4,7 @@
 
 import { ReactNode, CSSProperties } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ProductImageGallery } from '@/components/product/ProductImageGallery';
 
 interface CardProps {
   children: ReactNode;
@@ -48,27 +49,13 @@ export const Card = ({ children, className = '', hover = false }: CardProps) => 
   );
 };
 
-export const CardImage = ({ src, alt }: { src: string; alt: string }) => {
+export const CardImage = ({ src, images, alt }: { src: string; images?: string[]; alt: string }) => {
   return (
-    <div
+    <ProductImageGallery
+      images={images?.length ? images : src ? [src] : []}
+      alt={alt}
       className="w-full h-80 overflow-hidden"
-      style={{ backgroundColor: 'var(--color-borderLight)' }}
-    >
-      {src ? (
-        <img
-          src={src}
-          alt={alt}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div
-          className="w-full h-full flex items-center justify-center"
-          style={{ color: 'var(--color-textMuted)' }}
-        >
-          <span>Sem imagem</span>
-        </div>
-      )}
-    </div>
+    />
   );
 };
 

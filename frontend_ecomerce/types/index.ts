@@ -6,6 +6,7 @@ export interface Product {
   description: string;
   price: number;
   image: string;
+  images?: string[];
   category: string;
   stock: number;
   stripePriceId?: string; // For future Stripe integration

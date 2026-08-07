@@ -40,7 +40,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       )}
       <Link to={`/products/${product.id}`} className="h-full block">
         <Card hover className="h-full flex flex-col">
-          <CardImage src={product.image} alt={product.name} />
+          <CardImage src={product.image} images={product.images} alt={product.name} />
           <CardContent className="flex-1 flex flex-col">
             <div className="mb-2">
               <Badge>{product.category}</Badge>

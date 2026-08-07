@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils/format';
 import { AddToCartButton } from '@/components/product/AddToCartButton';
+import { ProductImageGallery } from '@/components/product/ProductImageGallery';
 import { apiFetch } from '@/lib/api/client';
 
 export default function ProductPage() {
@@ -105,26 +106,11 @@ export default function ProductPage() {
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Product Image */}
-        <div
+        <ProductImageGallery
+          images={product.images?.length ? product.images : [product.image]}
+          alt={product.name}
           className="aspect-square rounded-lg overflow-hidden"
-          style={{ backgroundColor: 'var(--color-borderLight)' }}
-        >
-          {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{ color: 'var(--color-textMuted)' }}
-            >
-              Sem imagem
-            </div>
-          )}
-        </div>
+        />
 
         {/* Product Info */}
         <div className="flex flex-col">

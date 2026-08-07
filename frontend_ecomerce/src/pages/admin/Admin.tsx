@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminProductCard } from '@/components/admin/AdminProductCard';
+import { ProductImageManager, ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
-import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, Image, MessageSquare } from 'lucide-react';
+import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
 
 interface User {
@@ -124,6 +125,7 @@ export default function AdminPage() {
           description: p.description || '',
           price: p.price?.unit_amount ? p.price.unit_amount / 100 : 0,
           image: p.images[0] || '',
+          images: p.images || [],
           category: 'Produtos',
           stock: parseInt(p.metadata?.stock || '0'),
         }));
@@ -474,9 +476,11 @@ function ProductModal({
     description: product?.description || '',
     price: product?.price?.toString() || '',
     stock: product?.stock?.toString() || '0',
-    images: product?.image || '',
+    images: product?.images?.length ? product.images : product?.image ? [product.image] : [],
   });
   const [loading, setLoading] = useState(false);
+  const [hasPendingImages, setHasPendingImages] = useState(false);
+  const imageManagerRef = useRef<ProductImageManagerHandle>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -489,6 +493,9 @@ function ProductModal({
     const method = product ? 'PUT' : 'POST';
 
     try {
+      const uploadedImages = await imageManagerRef.current?.uploadPendingImages();
+      const imagesToSave = uploadedImages || formData.images;
+
       const response = await apiFetch(url, {
         method,
         headers: {
@@ -500,7 +507,7 @@ function ProductModal({
           description: formData.description,
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
-          images: formData.images ? [formData.images] : [],
+          images: imagesToSave,
         }),
       });
 
@@ -515,9 +522,9 @@ function ProductModal({
         const data = await response.json();
         alert(data.error || 'Erro ao salvar produto');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving product:', error);
-      alert('Erro ao salvar produto');
+      alert(error.message || 'Erro ao salvar produto');
     } finally {
       setLoading(false);
     }
@@ -683,41 +690,13 @@ function ProductModal({
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Image className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
-                  <label className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-                    URL da Imagem
-                  </label>
-                </div>
-                <input
-                  type="url"
-                  value={formData.images}
-                  onChange={(e) =>
-                    setFormData({ ...formData, images: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg focus:outline-none focus:ring-2"
-                  style={{
-                    backgroundColor: 'var(--color-background)',
-                    border: '1px solid var(--color-borderLight)',
-                    color: 'var(--color-text)',
-                  }}
-                  placeholder="https://exemplo.com/imagem.jpg"
-                />
-                {formData.images && (
-                  <div className="mt-3">
-                    <img
-                      src={formData.images}
-                      alt="Preview"
-                      className="w-full h-36 sm:h-48 object-cover rounded-lg"
-                      style={{ border: '1px solid var(--color-borderLight)' }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <ProductImageManager
+                ref={imageManagerRef}
+                images={formData.images}
+                onChange={(images) => setFormData({ ...formData, images })}
+                onPendingChange={setHasPendingImages}
+                disabled={loading}
+              />
             </div>
           </div>
 
@@ -759,7 +738,13 @@ function ProductModal({
                 }
               }}
             >
-              {loading ? 'Salvando...' : product ? 'Atualizar Produto' : 'Criar Produto'}
+              {loading
+                ? hasPendingImages
+                  ? 'Enviando fotos...'
+                  : 'Salvando...'
+                : product
+                  ? 'Atualizar Produto'
+                  : 'Criar Produto'}
             </button>
           </div>
         </form>

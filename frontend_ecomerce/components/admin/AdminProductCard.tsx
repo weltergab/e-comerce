@@ -18,7 +18,7 @@ export const AdminProductCard = ({ product, onEdit, onDelete }: AdminProductCard
 
   return (
     <Card hover className="h-full flex flex-col">
-      <CardImage src={product.image} alt={product.name} />
+      <CardImage src={product.image} images={product.images} alt={product.name} />
       <CardContent className="flex-1 flex flex-col">
         <div className="mb-2">
           <Badge>{product.category}</Badge>
