@@ -81,6 +81,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
                 onAddToCart={handleAddToCart}
                 disabled={product.stock === 0}
                 size="sm"
+                fullWidth
               />
             </div>
           </CardContent>

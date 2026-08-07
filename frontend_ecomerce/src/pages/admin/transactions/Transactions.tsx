@@ -270,7 +270,7 @@ export default function TransactionsPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => navigate("/admin")}
-                className="px-4 py-2 rounded transition-colors"
+                className="px-4 py-2 rounded-full font-semibold transition-all active:scale-[0.98]"
                 style={{
                   color: "var(--color-textSecondary)",
                   backgroundColor: "transparent",
@@ -350,7 +350,7 @@ export default function TransactionsPage() {
               <button
                 type="submit"
                 disabled={searching}
-                className="w-full lg:w-auto px-5 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                className="w-full lg:w-auto px-5 py-2.5 rounded-full font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                 style={{
                   backgroundColor: "var(--color-primary)",
                   color: "var(--color-primaryText)",
@@ -526,7 +526,7 @@ export default function TransactionsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => setSelectedTransaction(transaction)}
-                        className="font-medium transition-colors"
+                        className="px-3 py-1.5 rounded-full font-semibold transition-all active:scale-[0.98]"
                         style={{ color: "var(--color-primary)" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.color =
@@ -707,7 +707,7 @@ function TransactionModal({
           </div>
           <button
             onClick={onClose}
-            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
+            className="text-3xl leading-none transition-colors p-2 rounded-full flex-shrink-0"
             style={{ color: "var(--color-textSecondary)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "var(--color-error)";
@@ -868,10 +868,10 @@ function TransactionModal({
               {!isEditingNotes && (
                 <button
                   onClick={() => setIsEditingNotes(true)}
-                  className="text-sm px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="text-sm px-4 py-2 rounded-full transition-all active:scale-[0.98] font-semibold"
                   style={{
                     color: "var(--color-primary)",
-                    border: "2px solid var(--color-primary)",
+                    border: "1px solid var(--color-borderLight)",
                     backgroundColor: "transparent",
                   }}
                   onMouseEnter={(e) => {
@@ -907,7 +907,7 @@ function TransactionModal({
                   <button
                     onClick={handleSaveNotes}
                     disabled={isSaving}
-                    className="px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                    className="px-6 py-3 rounded-full font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                     style={{
                       backgroundColor: "var(--color-primary)",
                       color: "var(--color-primaryText)",
@@ -933,7 +933,7 @@ function TransactionModal({
                       setNotes(transaction.adminNotes || "");
                     }}
                     disabled={isSaving}
-                    className="px-6 py-3 rounded-lg transition-colors disabled:opacity-50"
+                    className="px-6 py-3 rounded-full font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                     style={{
                       backgroundColor: "var(--color-background)",
                       border: "1px solid var(--color-borderLight)",
@@ -1176,7 +1176,7 @@ function TransactionModal({
         <div className="mt-8">
           <button
             onClick={onClose}
-            className="w-full px-6 py-3 rounded-lg font-semibold transition-colors"
+            className="w-full px-6 py-3 rounded-full font-semibold transition-all active:scale-[0.98]"
             style={{
               backgroundColor: "var(--color-primary)",
               color: "var(--color-primaryText)",

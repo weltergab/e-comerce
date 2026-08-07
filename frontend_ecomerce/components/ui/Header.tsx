@@ -4,11 +4,47 @@
 
 import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { LogOut, Menu, ShoppingCart, UserPlus, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { Menu, ShoppingCart, X } from 'lucide-react';
+
+function DesktopNavLink({
+  to,
+  children,
+  highlight = false,
+}: {
+  to: string;
+  children: ReactNode;
+  highlight?: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-semibold transition-all"
+      style={{
+        color: highlight ? 'var(--color-accentText)' : 'var(--color-textSecondary)',
+        backgroundColor: highlight ? 'var(--color-accent)' : 'transparent',
+        border: '1px solid transparent',
+      }}
+      onMouseEnter={(e) => {
+        if (highlight) return;
+        e.currentTarget.style.color = 'var(--color-text)';
+        e.currentTarget.style.backgroundColor = 'var(--color-surfaceHover)';
+        e.currentTarget.style.borderColor = 'var(--color-borderLight)';
+      }}
+      onMouseLeave={(e) => {
+        if (highlight) return;
+        e.currentTarget.style.color = 'var(--color-textSecondary)';
+        e.currentTarget.style.backgroundColor = 'transparent';
+        e.currentTarget.style.borderColor = 'transparent';
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
 
 function MobileMenuLink({
   to,
@@ -24,7 +60,7 @@ function MobileMenuLink({
   return (
     <Link
       to={to}
-      className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold transition-colors"
+      className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-sm font-semibold transition-colors"
       style={{
         color: highlight ? 'var(--color-accentText)' : 'var(--color-text)',
         backgroundColor: highlight ? 'var(--color-accent)' : 'var(--color-background)',
@@ -33,7 +69,7 @@ function MobileMenuLink({
       onClick={onClick}
     >
       <span>{children}</span>
-      <span style={{ color: highlight ? 'var(--color-accentText)' : 'var(--color-textMuted)' }}>{'>'}</span>
+      <span style={{ color: highlight ? 'var(--color-accentText)' : 'var(--color-textMuted)' }}>›</span>
     </Link>
   );
 }
@@ -46,7 +82,7 @@ export const Header = () => {
 
   return (
     <header
-      className="shadow-lg top-0 left-0 right-0 z-50"
+      className="sticky top-0 left-0 right-0 z-50 backdrop-blur"
       style={{
         backgroundColor: 'var(--color-surface)',
         borderBottom: '1px solid var(--color-border)',
@@ -54,7 +90,6 @@ export const Header = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <Link
             to="/"
             className="text-2xl font-bold"
@@ -63,39 +98,34 @@ export const Header = () => {
             TechStore
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6">
-            <Link
-              to="/"
-              className="font-medium"
-              style={{ color: 'var(--color-textSecondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-textSecondary)'}
-            >
-              Produtos
-            </Link>
-            {user && (
-              <Link
-                to="/my-orders"
-                className="font-medium"
-                style={{ color: 'var(--color-textSecondary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-textSecondary)'}
-              >
-                Meus Pedidos
-              </Link>
-            )}
+          <nav className="hidden lg:flex items-center gap-2">
+            <DesktopNavLink to="/">Produtos</DesktopNavLink>
+
+            {user && <DesktopNavLink to="/my-orders">Meus Pedidos</DesktopNavLink>}
+
             <Link
               to="/cart"
-              className="relative font-medium"
-              style={{ color: 'var(--color-textSecondary)' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-textSecondary)'}
+              className="relative inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all"
+              style={{
+                color: 'var(--color-textSecondary)',
+                border: '1px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-text)';
+                e.currentTarget.style.backgroundColor = 'var(--color-surfaceHover)';
+                e.currentTarget.style.borderColor = 'var(--color-borderLight)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-textSecondary)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
             >
+              <ShoppingCart className="w-4 h-4" />
               Carrinho
               {itemCount > 0 && (
                 <span
-                  className="absolute -top-2 -right-3 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                  className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center"
                   style={{ backgroundColor: 'var(--color-error)' }}
                 >
                   {itemCount}
@@ -103,50 +133,29 @@ export const Header = () => {
               )}
             </Link>
 
-            {user?.isAdmin && (
-              <Link
-                to="/admin"
-                className="font-medium px-3 py-1 rounded"
-                style={{
-                  color: 'var(--color-accentText)',
-                  backgroundColor: 'var(--color-accent)',
-                }}
-              >
-                Admin
-              </Link>
-            )}
+            {user?.isAdmin && <DesktopNavLink to="/admin" highlight>Admin</DesktopNavLink>}
 
             <ThemeToggle />
 
             {user ? (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3 pl-2">
                 <span
-                  className="text-sm"
+                  className="hidden xl:block text-sm"
                   style={{ color: 'var(--color-textSecondary)' }}
                 >
                   Olá, <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{user.username}</span>
                 </span>
-                <Button
-                  onClick={logout}
-                  variant="outline"
-                  size="sm"
-                >
+                <Button onClick={logout} variant="ghost" size="sm">
+                  <LogOut className="w-4 h-4" />
                   Sair
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
-                <Link
-                  to="/login"
-                  className="font-medium"
-                  style={{ color: 'var(--color-textSecondary)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-textSecondary)'}
-                >
-                  Login
-                </Link>
+              <div className="flex items-center gap-2 pl-2">
+                <DesktopNavLink to="/login">Login</DesktopNavLink>
                 <Link to="/cadastro">
                   <Button size="sm">
+                    <UserPlus className="w-4 h-4" />
                     Cadastro
                   </Button>
                 </Link>
@@ -154,21 +163,22 @@ export const Header = () => {
             )}
           </nav>
 
-          {/* Mobile Navigation - 4 items in a row */}
           <div className="flex lg:hidden items-center gap-2">
-            {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Cart */}
             <Link
               to="/cart"
-              className="relative"
-              style={{ color: 'var(--color-text)' }}
+              className="relative w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                color: 'var(--color-text)',
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-borderLight)',
+              }}
             >
-              <ShoppingCart size={24} strokeWidth={1.5} />
+              <ShoppingCart size={20} strokeWidth={1.8} />
               {itemCount > 0 && (
                 <span
-                  className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                  className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center"
                   style={{ backgroundColor: 'var(--color-error)' }}
                 >
                   {itemCount}
@@ -176,20 +186,22 @@ export const Header = () => {
               )}
             </Link>
 
-            {/* Menu Toggle */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 rounded-lg"
-              style={{ color: 'var(--color-text)' }}
-              aria-label="Abrir menu"
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                color: 'var(--color-text)',
+                backgroundColor: 'var(--color-background)',
+                border: '1px solid var(--color-borderLight)',
+              }}
+              aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div
           className="lg:hidden"
@@ -198,29 +210,35 @@ export const Header = () => {
             borderTop: '1px solid var(--color-border)',
           }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
             <div className="grid gap-2">
               <MobileMenuLink to="/" onClick={() => setIsMenuOpen(false)}>
                 Produtos
               </MobileMenuLink>
-            {user && (
-              <MobileMenuLink to="/my-orders" onClick={() => setIsMenuOpen(false)}>
-                Meus Pedidos
-              </MobileMenuLink>
-            )}
-            {user?.isAdmin && (
-              <MobileMenuLink to="/admin" onClick={() => setIsMenuOpen(false)} highlight>
-                Admin
-              </MobileMenuLink>
-            )}
+
+              {user && (
+                <MobileMenuLink to="/my-orders" onClick={() => setIsMenuOpen(false)}>
+                  Meus Pedidos
+                </MobileMenuLink>
+              )}
+
+              {user?.isAdmin && (
+                <MobileMenuLink to="/admin" onClick={() => setIsMenuOpen(false)} highlight>
+                  Admin
+                </MobileMenuLink>
+              )}
             </div>
 
-            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
               {user ? (
                 <div className="grid gap-3">
                   <div
-                    className="text-sm rounded-lg px-3 py-2"
-                    style={{ color: 'var(--color-textSecondary)' }}
+                    className="text-sm rounded-2xl px-4 py-3"
+                    style={{
+                      color: 'var(--color-textSecondary)',
+                      backgroundColor: 'var(--color-background)',
+                      border: '1px solid var(--color-borderLight)',
+                    }}
                   >
                     Olá, <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{user.username}</span>
                   </div>
@@ -233,6 +251,7 @@ export const Header = () => {
                     size="sm"
                     fullWidth
                   >
+                    <LogOut className="w-4 h-4" />
                     Sair
                   </Button>
                 </div>
@@ -245,6 +264,7 @@ export const Header = () => {
                   </Link>
                   <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
                     <Button size="sm" fullWidth>
+                      <UserPlus className="w-4 h-4" />
                       Cadastro
                     </Button>
                   </Link>

@@ -5,6 +5,7 @@ import { Card, CardImage, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils/format';
 import { Button } from '@/components/ui/Button';
+import { Pencil, Trash2 } from 'lucide-react';
 
 interface AdminProductCardProps {
   product: Product;
@@ -57,13 +58,14 @@ export const AdminProductCard = ({ product, onEdit, onDelete }: AdminProductCard
           </div>
 
           {/* Botões de Admin */}
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={() => onEdit(product)}
-              variant="primary"
+              variant="outline"
               size="sm"
               fullWidth
             >
+              <Pencil className="w-4 h-4" />
               Editar
             </Button>
             <Button
@@ -72,6 +74,7 @@ export const AdminProductCard = ({ product, onEdit, onDelete }: AdminProductCard
               size="sm"
               fullWidth
             >
+              <Trash2 className="w-4 h-4" />
               Excluir
             </Button>
           </div>

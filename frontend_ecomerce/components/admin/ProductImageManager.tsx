@@ -295,7 +295,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Product
           border: '1px solid var(--color-borderLight)',
         }}
       >
-        <label className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 rounded-lg font-semibold cursor-pointer transition-colors"
+        <label className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 rounded-full font-semibold cursor-pointer transition-all active:scale-[0.98]"
           style={{
             color: 'var(--color-buttonPrimaryBg)',
             border: '2px solid var(--color-buttonPrimaryBg)',
@@ -384,11 +384,11 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Product
               className="relative rounded-lg overflow-hidden"
               style={{ border: '1px solid var(--color-borderLight)' }}
             >
-              <img src={imageUrl} alt="Imagem do produto" className="w-full aspect-square object-cover" />
+              <img src={imageUrl} alt="Imagem do produto" className="w-full aspect-square object-cover rounded-lg" />
               <button
                 type="button"
                 aria-label="Remover imagem"
-                className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center"
+                className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-[0.98]"
                 style={{
                   backgroundColor: 'var(--color-surface)',
                   color: 'var(--color-error)',

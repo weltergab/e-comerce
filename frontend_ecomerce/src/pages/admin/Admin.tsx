@@ -6,7 +6,7 @@ import { AdminProductCard } from '@/components/admin/AdminProductCard';
 import { ProductImageManager, ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
-import { Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare } from 'lucide-react';
+import { Activity, Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare, Plus, ReceiptText } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
 
 interface User {
@@ -212,56 +212,97 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+          <div
+            className="rounded-2xl p-5 sm:p-6 mb-4"
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
             <div className="min-w-0">
               <h1
-                className="text-3xl font-bold mb-2"
+                className="text-2xl sm:text-3xl font-bold mb-2"
                 style={{ color: 'var(--color-text)' }}
               >
                 Painel Administrativo
               </h1>
-              <p style={{ color: 'var(--color-textSecondary)' }}>
+              <p className="text-sm sm:text-base mb-3" style={{ color: 'var(--color-textSecondary)' }}>
                 Bem-vindo, {user?.username}
               </p>
-              <p style={{ color: 'var(--color-textSecondary)' }}>
-                Sistema completo com gerenciamento de estoque e controle de transações. Além disso, possui integração com a gigante plataforma de pagamentos Stripe que traz uma infraestrutura para transações seguras.
+              <p className="text-sm sm:text-base leading-relaxed max-w-4xl" style={{ color: 'var(--color-textSecondary)' }}>
+                Sistema completo com gerenciamento de estoque e controle de transações. Além disso, possui integração com a plataforma de pagamentos Stripe para transações seguras.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-3 w-full lg:w-auto">
-              <Button
-                onClick={handleCheckHealth}
-                variant="outline"
-                size="md"
-                disabled={healthLoading}
-                className="w-full lg:w-auto"
-              >
-                {healthLoading ? 'Verificando...' : 'Verificar Conexões'}
-              </Button>
-              <Button
-                onClick={() => setShowIntroModal(true)}
-                variant="outline"
-                size="md"
-                className="w-full lg:w-auto inline-flex items-center justify-center gap-2"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Editar Frases
-              </Button>
-              <Button
-                onClick={() => navigate('/admin/transactions')}
-                variant="outline"
-                size="md"
-                className="w-full lg:w-auto"
-              >
-                Ver Transações
-              </Button>
-              <Button
+          </div>
+
+          <div
+            className="rounded-2xl p-3 sm:p-4 mb-6"
+            style={{
+              backgroundColor: 'var(--color-background)',
+              border: '1px solid var(--color-borderLight)',
+            }}
+          >
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              <button
+                type="button"
                 onClick={() => setShowCreateModal(true)}
-                variant="primary"
-                size="md"
-                className="w-full lg:w-auto"
+                className="min-h-20 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.98]"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-primaryText)',
+                  border: '1px solid transparent',
+                }}
               >
-                + Novo Produto
-              </Button>
+                <Plus className="w-5 h-5 mb-2" />
+                <span className="block text-sm font-bold">Novo produto</span>
+                <span className="block text-xs opacity-80">Cadastrar item</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/admin/transactions')}
+                className="min-h-20 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.98]"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text)',
+                  border: '1px solid var(--color-borderLight)',
+                }}
+              >
+                <ReceiptText className="w-5 h-5 mb-2" style={{ color: 'var(--color-primary)' }} />
+                <span className="block text-sm font-bold">Transações</span>
+                <span className="block text-xs" style={{ color: 'var(--color-textSecondary)' }}>Histórico e filtros</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowIntroModal(true)}
+                className="min-h-20 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.98]"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text)',
+                  border: '1px solid var(--color-borderLight)',
+                }}
+              >
+                <MessageSquare className="w-5 h-5 mb-2" style={{ color: 'var(--color-primary)' }} />
+                <span className="block text-sm font-bold">Frases</span>
+                <span className="block text-xs" style={{ color: 'var(--color-textSecondary)' }}>Topo da loja</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCheckHealth}
+                disabled={healthLoading}
+                className="min-h-20 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text)',
+                  border: '1px solid var(--color-borderLight)',
+                }}
+              >
+                <Activity className="w-5 h-5 mb-2" style={{ color: 'var(--color-primary)' }} />
+                <span className="block text-sm font-bold">{healthLoading ? 'Verificando' : 'Conexões'}</span>
+                <span className="block text-xs" style={{ color: 'var(--color-textSecondary)' }}>Backend, banco e Stripe</span>
+              </button>
             </div>
           </div>
 
@@ -567,7 +608,7 @@ function ProductModal({
           <button
             onClick={onClose}
             type="button"
-            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
+            className="text-3xl leading-none transition-colors p-2 rounded-full flex-shrink-0"
             style={{ color: 'var(--color-textSecondary)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'var(--color-error)';
@@ -704,7 +745,7 @@ function ProductModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full px-5 py-3 rounded-lg font-semibold transition-colors"
+              className="w-full px-5 py-3 rounded-full font-semibold transition-all active:scale-[0.98]"
               style={{
                 backgroundColor: 'var(--color-background)',
                 border: '1px solid var(--color-borderLight)',
@@ -722,7 +763,7 @@ function ProductModal({
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-5 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-5 py-3 rounded-full font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
               style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'var(--color-primaryText)',
@@ -871,7 +912,7 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             type="button"
-            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
+            className="text-3xl leading-none transition-colors p-2 rounded-full flex-shrink-0"
             style={{ color: 'var(--color-textSecondary)' }}
           >
             ×

@@ -17,7 +17,7 @@ export function ProductImageGallery({
   images,
   alt,
   className = 'w-full h-80',
-  imageClassName = 'w-full h-full object-cover',
+  imageClassName = 'w-full h-full object-cover rounded-lg',
 }: ProductImageGalleryProps) {
   const visibleImages = getVisibleImages(images);
   const [currentIndex, setCurrentIndex] = useState(0);

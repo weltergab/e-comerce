@@ -143,7 +143,7 @@ export default function MyOrdersPage() {
             <button
               key={transaction.id}
               type="button"
-              className="w-full rounded-lg p-4 sm:p-5 text-left transition-all"
+              className="w-full rounded-2xl p-4 sm:p-5 text-left transition-all active:scale-[0.99]"
               style={{
                 backgroundColor: 'var(--color-surface)',
                 border: '1px solid var(--color-borderLight)',
@@ -252,7 +252,7 @@ function TransactionModal({
           </div>
           <button
             onClick={onClose}
-            className="text-3xl leading-none transition-colors p-2 rounded-lg flex-shrink-0"
+            className="text-3xl leading-none transition-colors p-2 rounded-full flex-shrink-0"
             style={{ color: 'var(--color-textSecondary)' }}
             aria-label="Fechar detalhes do pedido"
           >
