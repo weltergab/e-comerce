@@ -88,14 +88,14 @@ export const Header = () => {
         borderBottom: '1px solid var(--color-border)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto pb-1 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link
             to="/"
-            className="text-2xl font-bold"
-            style={{ color: 'var(--color-primary)' }}
+            className="text-2xl font-extrabold text-green-950 overline"
+            style={{  }}
           >
-            TechStore
+            A B A C A T E - Shop
           </Link>
 
           <nav className="hidden lg:flex items-center gap-2">

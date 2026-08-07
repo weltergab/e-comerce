@@ -22,7 +22,7 @@ const PRODUCT_IMAGES_BUCKET = 'product-images';
 const MAX_PRODUCT_IMAGE_UPLOAD_BYTES = 500 * 1024;
 const ALLOWED_PRODUCT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const defaultIntroductionHeader = {
-  miniText: 'Storecy',
+  miniText: 'Abacate Shop',
   title: 'Produtos escolhidos para simplificar sua rotina',
   subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
   description:

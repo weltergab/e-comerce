@@ -15,7 +15,7 @@ interface IntroductionHeaderContent {
 }
 
 const defaultIntroductionHeader: IntroductionHeaderContent = {
-  miniText: 'Storecy',
+  miniText: 'Abacate Shop',
   title: 'Produtos escolhidos para simplificar sua rotina',
   subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
   description:

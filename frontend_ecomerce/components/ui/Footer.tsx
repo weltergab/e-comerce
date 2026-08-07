@@ -18,10 +18,10 @@ export function Footer() {
               className="inline-block text-xl font-bold mb-3"
               style={{ color: 'var(--color-primary)' }}
             >
-              TechStore
+              Cyrius Shop
             </Link>
             <p className="max-w-md text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-              Tecnologia, pedidos rastreáveis e pagamento seguro em uma experiência simples.
+              Tecnologia e pagamento seguro.
             </p>
           </div>
 
@@ -53,7 +53,7 @@ export function Footer() {
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                suporte@techstore.com
+                gavvelvv@gmail.com
               </p>
               <p className="flex items-center gap-2">
                 <Github className="w-4 h-4" />
@@ -70,8 +70,8 @@ export function Footer() {
             color: 'var(--color-textMuted)',
           }}
         >
-          <span>© {new Date().getFullYear()} TechStore.</span>
-          <span>Frontend React, backend Express e Supabase hospedado.</span>
+          <span>© {new Date().getFullYear()} Cyrus Shop.</span>
+          <span>...</span>
         </div>
       </div>
     </footer>

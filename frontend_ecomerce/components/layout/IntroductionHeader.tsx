@@ -1,4 +1,4 @@
-interface IntroductionHeaderProps {
+﻿interface IntroductionHeaderProps {
   title: string;
   subtitle: string;
   description: string;
@@ -19,7 +19,7 @@ export function IntroductionHeader({
         borderColor: 'var(--color-borderLight)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 sm:pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         <div className="max-w-4xl">
           <p className="text-special text-sm font-semibold uppercase tracking-wide mb-4">
             {miniText}

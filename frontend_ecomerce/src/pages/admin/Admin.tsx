@@ -208,7 +208,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen pt-24" style={{ backgroundColor: 'var(--color-background)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -230,7 +230,7 @@ export default function AdminPage() {
                 Bem-vindo, {user?.username}
               </p>
               <p className="text-sm sm:text-base leading-relaxed max-w-4xl" style={{ color: 'var(--color-textSecondary)' }}>
-                Sistema completo com gerenciamento de estoque e controle de transações. Além disso, possui integração com a plataforma de pagamentos Stripe para transações seguras.
+                Sistema completo de gerenciamento de estoque e controle de transações. Possui integração com a gigante plataforma de pagamentos Stripe para oferecer transações seguras.
               </p>
             </div>
           </div>
@@ -796,7 +796,7 @@ function ProductModal({
 
 function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
   const defaultForm: IntroductionHeaderContent = {
-    miniText: 'Storecy',
+    miniText: 'Abacate Shop',
     title: 'Produtos escolhidos para simplificar sua rotina',
     subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
     description:
