@@ -1,7 +1,5 @@
 // Header component with navigation and cart
 
-'use client';
-
 import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Menu, ShoppingCart, UserPlus, X } from 'lucide-react';

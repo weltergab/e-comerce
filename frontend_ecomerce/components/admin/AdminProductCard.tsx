@@ -1,5 +1,3 @@
-'use client';
-
 import { Product } from '@/types';
 import { Card, CardImage, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';

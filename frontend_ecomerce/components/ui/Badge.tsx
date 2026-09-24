@@ -1,7 +1,5 @@
 // Badge component for displaying categories and status
 
-'use client';
-
 import { ReactNode, CSSProperties } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 

@@ -1,4 +1,4 @@
-import { startServer } from './index';
+import { startServer } from '../src/app';
 
 try {
   startServer();

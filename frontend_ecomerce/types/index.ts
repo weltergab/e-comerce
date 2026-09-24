@@ -1,15 +1,14 @@
-// Domain Types - Following SOLID principles
-
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  currency: string;
   image: string;
-  images?: string[];
+  images: string[];
   category: string;
   stock: number;
-  stripePriceId?: string; // For future Stripe integration
+  active?: boolean;
 }
 
 export interface CartItem {
@@ -17,58 +16,55 @@ export interface CartItem {
   quantity: number;
 }
 
-export interface Cart {
-  items: CartItem[];
-  total: number;
-}
-
-export interface Customer {
-  id?: string;
-  name: string;
-  email: string;
-  phone?: string;
-}
-
 export interface ShippingAddress {
+  recipient: string;
   street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
   city: string;
   state: string;
-  zipCode: string;
-  country: string;
+  postalCode: string;
+  country: 'BR';
+}
+
+export interface CheckoutRequest {
+  items: Array<{ productId: string; quantity: number }>;
+  shippingAddress: ShippingAddress;
+}
+
+export interface CheckoutResponse {
+  clientSecret: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+}
+
+export interface OrderProduct {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  qty: number;
+  image?: string;
 }
 
 export interface Order {
   id: string;
-  customer: Customer;
-  items: CartItem[];
-  total: number;
+  stripePaymentIntentId: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  orderStatus: string;
+  paymentMethod?: string | null;
+  userEmail?: string;
+  userName?: string;
+  products: OrderProduct[];
   shippingAddress: ShippingAddress;
-  status: OrderStatus;
-  createdAt: Date;
-  stripePaymentIntentId?: string; // For Stripe integration
-}
-
-export enum OrderStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
-
-// Repository interfaces following Dependency Inversion Principle
-export interface IProductRepository {
-  getAll(): Promise<Product[]>;
-  getById(id: string): Promise<Product | null>;
-  getByCategory(category: string): Promise<Product[]>;
-}
-
-export interface IOrderRepository {
-  create(order: Omit<Order, 'id' | 'createdAt'>): Promise<Order>;
-  getById(id: string): Promise<Order | null>;
-}
-
-// Payment gateway interface for future Stripe integration
-export interface IPaymentGateway {
-  createPaymentIntent(amount: number, currency: string): Promise<string>;
-  confirmPayment(paymentIntentId: string): Promise<boolean>;
+  trackingCode?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  adminNotes?: string | null;
+  adminNotesUpdatedAt?: string | null;
+  adminNotesUpdatedBy?: string | null;
 }

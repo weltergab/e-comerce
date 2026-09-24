@@ -1,3 +1,3 @@
-import { handleApi } from '../lib/vercel/handler';
+import app from '../src/app';
 
-export default handleApi;
+export default app;

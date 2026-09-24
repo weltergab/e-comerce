@@ -1,6 +1,4 @@
-'use client';
-
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -34,8 +32,8 @@ function LoginForm() {
     try {
       await login(emailOrUsername, password);
       navigate(redirect);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +98,7 @@ function LoginForm() {
               >
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
+              <div className="text-right"><Link to="/forgot-password" className="text-sm" style={{ color: 'var(--color-primary)' }}>Esqueci minha senha</Link></div>
             </form>
 
             <div className="mt-4 text-center">
@@ -133,9 +132,5 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="max-w-md mx-auto px-4 py-8 text-center">Carregando...</div>}>
-      <LoginForm />
-    </Suspense>
-  );
+  return <LoginForm />;
 }

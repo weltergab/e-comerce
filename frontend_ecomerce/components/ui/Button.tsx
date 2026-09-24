@@ -1,5 +1,3 @@
-'use client';
-
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 

@@ -1,65 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { useStock } from '@/lib/hooks/useStock';
-import { apiFetch } from '@/lib/api/client';
+import { useProducts } from '@/src/features/catalog/hooks';
 
-interface ProductGridProps {
-  initialProducts: Product[];
+export function ProductGrid() {
+  const { data, isLoading, isError, refetch } = useProducts();
+  if (isLoading) return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" role="status">{Array.from({ length: 9 }, (_, index) => <div key={index} className="bg-gray-200 animate-pulse rounded-lg h-96" />)}</div>;
+  if (isError) return <div className="text-center py-12"><p className="mb-4">Não foi possível carregar o catálogo.</p><button className="underline" onClick={() => refetch()}>Tentar novamente</button></div>;
+  if (!data?.products.length) return <p className="text-center py-12">Nenhum produto disponível.</p>;
+  return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{data.products.map((product) => <ProductCard key={product.id} product={product} />)}</div>;
 }
-
-export const ProductGrid = ({ initialProducts }: ProductGridProps) => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [loading, setLoading] = useState(false);
-  const { stockLevels } = useStock();
-
-  // Fetch products from Stripe on mount
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await apiFetch('/api/products');
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data.products);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        // Keep initial products on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  // Merge products with live stock levels
-  const productsWithStock = products.map(product => ({
-    ...product,
-    stock: stockLevels[product.id] ?? product.stock
-  }));
-
-  if (loading && products.length === 0) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-          <div
-            key={i}
-            className="bg-gray-200 animate-pulse rounded-lg h-96"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      {productsWithStock.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
-  );
-};

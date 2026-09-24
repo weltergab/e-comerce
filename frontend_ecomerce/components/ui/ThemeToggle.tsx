@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemeMode } from '@/types/theme';

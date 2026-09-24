@@ -8,6 +8,8 @@ export function getOrderStatusColor(status: string) {
   switch (status.toLowerCase()) {
     case 'succeeded':
       return 'var(--color-success)';
+    case 'refunded':
+      return 'var(--color-textMuted)';
     case 'processing':
     case 'pending':
     case 'requires_payment_method':
@@ -27,6 +29,8 @@ export function getOrderStatusText(status: string) {
   switch (status.toLowerCase()) {
     case 'succeeded':
       return 'Pago';
+    case 'refunded':
+      return 'Reembolsado';
     case 'processing':
     case 'requires_payment_method':
     case 'requires_action':

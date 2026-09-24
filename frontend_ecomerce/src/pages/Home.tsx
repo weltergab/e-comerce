@@ -52,7 +52,7 @@ export default function Home() {
           title="Produtos"
           description="Encontre os melhores produtos de tecnologia com os melhores precos"
         />
-        <ProductGrid initialProducts={[]} />
+        <ProductGrid />
       </PageContainer>
     </>
   );

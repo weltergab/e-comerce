@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminProductCard } from '@/components/admin/AdminProductCard';
@@ -8,13 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
 import { Activity, Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare, Plus, ReceiptText } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
-
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  isAdmin: boolean;
-}
+import { useAuth } from '@/contexts/AuthContext';
 
 interface StripeProduct {
   id: string;
@@ -59,7 +51,7 @@ interface IntroductionHeaderContent {
 }
 
 export default function AdminPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -70,51 +62,12 @@ export default function AdminPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuth();
+    loadProducts();
   }, []);
 
-  const checkAuth = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const response = await apiFetch('/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        navigate('/login');
-        return;
-      }
-
-      const data = await response.json();
-      if (!data.user.isAdmin) {
-        alert('Acesso negado. Apenas administradores.');
-        navigate('/');
-        return;
-      }
-
-      setUser(data.user);
-      loadProducts();
-    } catch (error) {
-      console.error('Auth error:', error);
-      navigate('/login');
-    }
-  };
-
   const loadProducts = async () => {
-    const token = localStorage.getItem('auth_token');
     try {
-      const response = await apiFetch('/api/admin/products', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch('/api/admin/products?limit=100');
 
       if (response.ok) {
         const data = await response.json();
@@ -124,6 +77,7 @@ export default function AdminPage() {
           name: p.name,
           description: p.description || '',
           price: p.price?.unit_amount ? p.price.unit_amount / 100 : 0,
+          currency: p.price?.currency || 'brl',
           image: p.images[0] || '',
           images: p.images || [],
           category: 'Produtos',
@@ -143,13 +97,9 @@ export default function AdminPage() {
       return;
     }
 
-    const token = localStorage.getItem('auth_token');
     try {
       const response = await apiFetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       if (response.ok) {
@@ -169,15 +119,10 @@ export default function AdminPage() {
   };
 
   const handleCheckHealth = async () => {
-    const token = localStorage.getItem('auth_token');
     setHealthLoading(true);
 
     try {
-      const response = await apiFetch('/api/admin/health', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch('/api/admin/health');
       const data = await response.json();
 
       if (!response.ok) {
@@ -230,7 +175,7 @@ export default function AdminPage() {
                 Bem-vindo, {user?.username}
               </p>
               <p className="text-sm sm:text-base leading-relaxed max-w-4xl" style={{ color: 'var(--color-textSecondary)' }}>
-                Sistema completo de gerenciamento de estoque e controle de transações. Possui integração com a gigante plataforma de pagamentos Stripe para oferecer transações seguras.
+                Sistema de gerenciamento de catálogo, estoque e pedidos, com pagamentos processados pelo Stripe.
               </p>
             </div>
           </div>
@@ -260,7 +205,7 @@ export default function AdminPage() {
 
               <button
                 type="button"
-                onClick={() => navigate('/admin/transactions')}
+                onClick={() => navigate('/admin/orders')}
                 className="min-h-20 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.98]"
                 style={{
                   backgroundColor: 'var(--color-surface)',
@@ -269,7 +214,7 @@ export default function AdminPage() {
                 }}
               >
                 <ReceiptText className="w-5 h-5 mb-2" style={{ color: 'var(--color-primary)' }} />
-                <span className="block text-sm font-bold">Transações</span>
+                <span className="block text-sm font-bold">Pedidos</span>
                 <span className="block text-xs" style={{ color: 'var(--color-textSecondary)' }}>Histórico e filtros</span>
               </button>
 
@@ -527,7 +472,6 @@ function ProductModal({
     e.preventDefault();
     setLoading(true);
 
-    const token = localStorage.getItem('auth_token');
     const url = product
       ? `/api/admin/products/${product.id}`
       : '/api/admin/products';
@@ -541,7 +485,6 @@ function ProductModal({
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: formData.name,
@@ -563,9 +506,9 @@ function ProductModal({
         const data = await response.json();
         alert(data.error || 'Erro ao salvar produto');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving product:', error);
-      alert(error.message || 'Erro ao salvar produto');
+      alert(error instanceof Error ? error.message : 'Erro ao salvar produto');
     } finally {
       setLoading(false);
     }
@@ -808,14 +751,8 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const loadParameter = async () => {
-      const token = localStorage.getItem('auth_token');
-
       try {
-        const response = await apiFetch('/api/admin/parameters/introduction-header', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await apiFetch('/api/admin/parameters/introduction-header');
         const data = await response.json();
 
         if (response.ok) {
@@ -839,7 +776,6 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('auth_token');
     setSaving(true);
 
     try {
@@ -847,7 +783,6 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });

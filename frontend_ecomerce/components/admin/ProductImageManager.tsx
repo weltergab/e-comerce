@@ -1,12 +1,10 @@
-'use client';
-
 import { ChangeEvent, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Image, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch } from '@/lib/api/client';
 
-const MAX_IMAGE_UPLOAD_BYTES = 500 * 1024;
-const MAX_IMAGE_UPLOAD_LABEL = '500KB';
+const MAX_IMAGE_UPLOAD_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_UPLOAD_LABEL = '4MB';
 const MIN_IMAGE_COMPRESS_BYTES = 200 * 1024;
 
 interface ProductImageManagerProps {
@@ -31,14 +29,6 @@ const createId = () =>
   window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const formatBytes = (bytes: number) => `${Math.ceil(bytes / 1024)}KB`;
-
-const readFileAsBase64 = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 
 const loadImage = (file: File) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -199,8 +189,8 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Product
           };
         })
       );
-    } catch (error: any) {
-      alert(error.message || 'Erro ao reduzir imagem');
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Erro ao reduzir imagem');
     } finally {
       setCompressingId(null);
     }
@@ -214,24 +204,16 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Product
 
     if (pendingImages.length === 0) return images;
 
-    const token = localStorage.getItem('auth_token');
     setUploading(true);
 
     try {
       const uploadedUrls: string[] = [];
       for (const pending of pendingImages) {
-        const base64 = await readFileAsBase64(pending.file);
+        const formData = new FormData();
+        formData.append('file', pending.file, pending.file.name);
         const response = await apiFetch('/api/admin/uploads/product-images', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            fileName: pending.file.name,
-            contentType: pending.file.type,
-            base64,
-          }),
+          body: formData,
         });
         const data = await response.json();
 
@@ -247,8 +229,8 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Product
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setPendingImages([]);
       return nextImages;
-    } catch (error: any) {
-      throw new Error(error.message || 'Erro ao enviar imagens');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Erro ao enviar imagens');
     } finally {
       setUploading(false);
     }

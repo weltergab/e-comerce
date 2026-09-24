@@ -6,7 +6,7 @@ const rootDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
-  envPrefix: ['VITE_', 'STRIPE_PUBLISHABLE_KEY', 'BACKEND_URL', 'BACKEND_LOCAL_URL'],
+  envPrefix: 'VITE_',
   resolve: {
     alias: {
       '@': rootDir,

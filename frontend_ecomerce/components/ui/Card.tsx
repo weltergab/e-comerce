@@ -1,7 +1,5 @@
 // Card component - reusable UI component
 
-'use client';
-
 import { ReactNode, CSSProperties } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ProductImageGallery } from '@/components/product/ProductImageGallery';

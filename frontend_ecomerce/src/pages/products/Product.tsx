@@ -1,191 +1,46 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Product } from '@/types';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils/format';
 import { AddToCartButton } from '@/components/product/AddToCartButton';
 import { ProductImageGallery } from '@/components/product/ProductImageGallery';
-import { apiFetch } from '@/lib/api/client';
+import { useProduct } from '@/src/features/catalog/hooks';
 
 export default function ProductPage() {
-  const params = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [currentStock, setCurrentStock] = useState(0);
+  const { data: product, isLoading } = useProduct(id);
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        // Buscar todos os produtos
-        const response = await apiFetch('/api/products');
-        const data = await response.json();
+  if (isLoading) return <div className="max-w-7xl mx-auto px-4 py-24" role="status">Carregando...</div>;
+  if (!product) return <div className="max-w-7xl mx-auto px-4 py-24"><h1 className="text-2xl font-bold">Produto não encontrado</h1><Button onClick={() => navigate('/')} className="mt-4">Voltar</Button></div>;
 
-        if (data.success && data.products) {
-          // Encontrar o produto pelo ID
-          const foundProduct = data.products.find(
-            (p: Product) => p.id === params.id
-          );
-
-          if (foundProduct) {
-            setProduct(foundProduct);
-
-            // Buscar estoque
-            const stockResponse = await apiFetch('/api/stock');
-            const stockData = await stockResponse.json();
-            setCurrentStock(stockData.stock[foundProduct.id] || foundProduct.stock);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading product:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProduct();
-  }, [params.id]);
-
-  const handleAddToCart = async () => {
-    if (product) {
-      const success = await addItem(product, quantity);
-
-      if (success) {
-        setTimeout(() => {
-          navigate('/cart');
-        }, 1500);
-      }
-    }
-  };
-
-  const incrementQuantity = () => {
-    if (quantity < currentStock) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        <div className="animate-pulse" style={{ color: 'var(--color-text)' }}>
-          Carregando...
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-          Produto não encontrado
-        </h1>
-        <Button onClick={() => navigate('/')} className="mt-4">
-          Voltar para Home
-        </Button>
-      </div>
-    );
-  }
-
+  const add = async () => { if (await addItem(product, quantity)) navigate('/cart'); };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-      <Button onClick={() => navigate(-1)} variant="outline" className="mb-6">
-        ← Voltar
-      </Button>
-
+      <Button onClick={() => navigate(-1)} variant="outline" className="mb-6">← Voltar</Button>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <ProductImageGallery
-          images={product.images?.length ? product.images : [product.image]}
-          alt={product.name}
-          className="aspect-square rounded-lg overflow-hidden"
-        />
-
-        {/* Product Info */}
+        <ProductImageGallery images={product.images.length ? product.images : [product.image]} alt={product.name} className="aspect-square rounded-lg overflow-hidden" />
         <div className="flex flex-col">
-          <div className="mb-4">
-            <Badge>{product.category}</Badge>
-          </div>
-
-          <h1 className="text-3xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
-            {product.name}
-          </h1>
-
-          <p className="text-4xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>
-            {formatCurrency(product.price)}
-          </p>
-
+          <div className="mb-4"><Badge>{product.category}</Badge></div>
+          <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+          <p className="text-4xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{formatCurrency(product.price, product.currency)}</p>
+          <h2 className="text-lg font-semibold mb-2">Descrição</h2>
+          <p className="leading-relaxed mb-6" style={{ color: 'var(--color-textSecondary)' }}>{product.description}</p>
+          <p className="text-sm mb-6">Estoque disponível: <strong>{product.stock} unidades</strong></p>
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-              Descrição
-            </h2>
-            <p className="leading-relaxed" style={{ color: 'var(--color-textSecondary)' }}>
-              {product.description}
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-              Estoque disponível:{' '}
-              <span className="font-semibold" style={{ color: 'var(--color-text)' }}>
-                {currentStock} unidades
-              </span>
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
-              Quantidade
-            </label>
+            <label className="block text-sm font-medium mb-2">Quantidade</label>
             <div className="flex items-center space-x-4">
-              <Button
-                onClick={decrementQuantity}
-                variant="outline"
-                size="sm"
-                disabled={quantity <= 1}
-              >
-                -
-              </Button>
-              <span className="text-xl font-semibold w-12 text-center text-gray-900">
-                {quantity}
-              </span>
-              <Button
-                onClick={incrementQuantity}
-                variant="outline"
-                size="sm"
-                disabled={quantity >= currentStock}
-              >
-                +
-              </Button>
+              <Button onClick={() => setQuantity((value) => Math.max(1, value - 1))} variant="outline" size="sm" disabled={quantity <= 1}>-</Button>
+              <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
+              <Button onClick={() => setQuantity((value) => Math.min(product.stock, 20, value + 1))} variant="outline" size="sm" disabled={quantity >= product.stock || quantity >= 20}>+</Button>
             </div>
           </div>
-
-          <AddToCartButton
-            onAddToCart={handleAddToCart}
-            disabled={currentStock === 0}
-            size="lg"
-            fullWidth
-            className="mb-4"
-          />
-
-          <Button
-            onClick={() => navigate('/')}
-            variant="outline"
-            size="lg"
-          >
-            Continuar Comprando
-          </Button>
+          <AddToCartButton onAddToCart={add} disabled={product.stock === 0} size="lg" fullWidth className="mb-4" />
+          <Button onClick={() => navigate('/')} variant="outline" size="lg">Continuar Comprando</Button>
         </div>
       </div>
     </div>

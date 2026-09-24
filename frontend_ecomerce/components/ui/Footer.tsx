@@ -18,7 +18,7 @@ export function Footer() {
               className="inline-block text-xl font-bold mb-3"
               style={{ color: 'var(--color-primary)' }}
             >
-              Cyrius Shop
+              Abacate Shop
             </Link>
             <p className="max-w-md text-sm" style={{ color: 'var(--color-textSecondary)' }}>
               Tecnologia e pagamento seguro.
@@ -57,7 +57,7 @@ export function Footer() {
               </p>
               <p className="flex items-center gap-2">
                 <Github className="w-4 h-4" />
-                Storecy
+                Abacate Shop
               </p>
             </div>
           </div>
@@ -70,7 +70,7 @@ export function Footer() {
             color: 'var(--color-textMuted)',
           }}
         >
-          <span>© {new Date().getFullYear()} Cyrus Shop.</span>
+          <span>© {new Date().getFullYear()} Abacate Shop.</span>
           <span>...</span>
         </div>
       </div>

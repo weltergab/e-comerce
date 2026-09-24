@@ -1,6 +1,4 @@
-'use client';
-
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -35,8 +33,8 @@ function CadastroForm() {
     try {
       await register(email, username, password);
       navigate(redirect);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar conta');
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +102,8 @@ function CadastroForm() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 10 caracteres"
+                  minLength={10}
                   required
                   disabled={isLoading}
                 />
@@ -150,9 +149,5 @@ function CadastroForm() {
 }
 
 export default function CadastroPage() {
-  return (
-    <Suspense fallback={<div className="max-w-md mx-auto px-4 py-8 text-center">Carregando...</div>}>
-      <CadastroForm />
-    </Suspense>
-  );
+  return <CadastroForm />;
 }

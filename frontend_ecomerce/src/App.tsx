@@ -11,8 +11,10 @@ import Checkout from '@/src/pages/Checkout';
 import CheckoutSuccess from '@/src/pages/checkout/success/CheckoutSuccess';
 import Product from '@/src/pages/products/Product';
 import Admin from '@/src/pages/admin/Admin';
-import Transactions from '@/src/pages/admin/transactions/Transactions';
+import AdminOrders from '@/src/pages/admin/orders/Orders';
 import MyOrders from '@/src/pages/MyOrders';
+import PasswordReset from '@/src/pages/PasswordReset';
+import { RequireAdmin, RequireAuth } from '@/src/app/guards';
 
 export function App() {
   return (
@@ -24,13 +26,15 @@ export function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/forgot-password" element={<PasswordReset />} />
+              <Route path="/reset-password" element={<PasswordReset />} />
               <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
+              <Route path="/checkout/success" element={<RequireAuth><CheckoutSuccess /></RequireAuth>} />
               <Route path="/products/:id" element={<Product />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/transactions" element={<Transactions />} />
-              <Route path="/my-orders" element={<MyOrders />} />
+              <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+              <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+              <Route path="/my-orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
             </Routes>
           </AppLayout>
         </CartProvider>

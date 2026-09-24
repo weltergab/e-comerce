@@ -5,5 +5,11 @@
       "source": "/api/:path*",
       "destination": "/api/index?__path=:path*"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/jobs/payments",
+      "schedule": "*/5 * * * *"
+    }
   ]
 }

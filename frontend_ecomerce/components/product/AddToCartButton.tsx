@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Check, ShoppingCart } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';

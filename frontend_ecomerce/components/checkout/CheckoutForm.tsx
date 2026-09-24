@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import {
   PaymentElement,
@@ -8,7 +6,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/Button';
 
-export const CheckoutForm = () => {
+export const CheckoutForm = ({ orderId }: { orderId: string }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -28,7 +26,7 @@ export const CheckoutForm = () => {
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/checkout/success`,
+          return_url: `${window.location.origin}/checkout/success?order_id=${encodeURIComponent(orderId)}`,
         },
       });
 
