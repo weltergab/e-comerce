@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx server/local.ts",
-    "build": "tsc --noEmit",
+    "build": "tsc --noEmit && node scripts/validate-vercel-config.mjs",
     "start": "tsx server/local.ts",
     "test": "vitest run",
     "check": "npm run build && npm test",
