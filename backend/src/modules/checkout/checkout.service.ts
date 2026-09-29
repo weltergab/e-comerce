@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { enqueueDeferredTask } from '../../background/queue';
 import { db } from '../../db/client';
-import { stripe } from '../../payments/stripe';
+import { checkoutPaymentMethods, stripe } from '../../payments/stripe';
 import { AppError } from '../../shared/errors';
+import { logger } from '../../shared/logger';
 import type { AccessClaims } from '../auth/auth.types';
 import type { CheckoutItemInput, ShippingAddressInput } from './checkout.schemas';
 
@@ -90,22 +91,33 @@ export async function createCheckout(input: {
   }
 
   let paymentIntentId: string | undefined;
+  let failureStage: 'payment-intent' | 'order-association' | 'reservation-scheduling' = 'payment-intent';
   try {
+    const paymentMethodTypes = await checkoutPaymentMethods();
     const paymentIntent = await stripe().paymentIntents.create({
       amount: Math.round(amount * 100),
       currency,
-      payment_method_types: ['card', 'pix'],
-      payment_method_options: { pix: { expires_after_seconds: 900 } },
+      payment_method_types: paymentMethodTypes,
+      payment_method_options: paymentMethodTypes.includes('pix')
+        ? { pix: { expires_after_seconds: 900 } }
+        : undefined,
       description: `Pedido ${orderId}`,
       metadata: { orderId, userId: input.user.userId },
     }, { idempotencyKey: orderId });
     paymentIntentId = paymentIntent.id;
     if (!paymentIntent.client_secret) throw new Error('PaymentIntent sem client secret');
+    failureStage = 'order-association';
     const { error: associationError } = await db().from('orders').update({ stripe_payment_intent_id: paymentIntent.id, payment_status: paymentIntent.status }).eq('id', orderId);
     if (associationError) throw associationError;
+    failureStage = 'reservation-scheduling';
     await enqueueDeferredTask({ type: 'reservation-expiry', orderId }, reservationExpiresAt);
     return { orderId, clientSecret: paymentIntent.client_secret, amount, currency, items: pricedItems };
-  } catch (error) {
+  } catch (cause) {
+    logger.error('checkout_initialization_failed', {
+      orderId,
+      stage: failureStage,
+      error: cause instanceof Error ? cause.message : String(cause),
+    });
     if (paymentIntentId) await stripe().paymentIntents.cancel(paymentIntentId).catch(() => undefined);
     await db().rpc('release_order_reservation', { p_order_id: orderId, p_reason: 'payment_creation_failed' });
     throw new AppError(502, 'PAYMENT_CREATE_FAILED', 'Não foi possível iniciar o pagamento. Tente novamente.');
