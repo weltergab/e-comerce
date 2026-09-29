@@ -22,6 +22,7 @@ export interface AppEnv {
 }
 
 let cached: AppEnv | null = null;
+export const PRODUCTION_FRONTEND_URL = 'https://storecy.vercel.app';
 
 function required(name: string, minimumLength = 1) {
   const value = process.env[name]?.trim();
@@ -31,8 +32,16 @@ function required(name: string, minimumLength = 1) {
   return value;
 }
 
-function origins(value: string | undefined, frontendUrl: string, nodeEnv: string) {
-  return [...new Set([frontendUrl, ...(nodeEnv === 'production' ? [] : ['http://localhost:5173']), ...(value || '').split(',')])]
+export function resolveFrontendUrl(value: string | undefined, nodeEnv: string) {
+  const fallback = nodeEnv === 'production' ? PRODUCTION_FRONTEND_URL : 'http://localhost:5173';
+  return (value || fallback).trim().replace(/\/$/, '');
+}
+
+export function resolveCorsOrigins(value: string | undefined, frontendUrl: string, nodeEnv: string) {
+  const environmentOrigins = nodeEnv === 'production'
+    ? [PRODUCTION_FRONTEND_URL]
+    : ['http://localhost:5173'];
+  return [...new Set([frontendUrl, ...environmentOrigins, ...(value || '').split(',')])]
     .map((origin) => origin.trim().replace(/\/$/, ''))
     .filter(Boolean);
 }
@@ -41,12 +50,12 @@ export function getEnv(): AppEnv {
   if (cached) return cached;
 
   const nodeEnv = process.env.NODE_ENV || 'development';
-  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  const frontendUrl = resolveFrontendUrl(process.env.FRONTEND_URL, nodeEnv);
   cached = {
     nodeEnv,
     port: Number(process.env.PORT || 3001),
     frontendUrl,
-    corsOrigins: origins(process.env.CORS_ORIGINS, frontendUrl, nodeEnv),
+    corsOrigins: resolveCorsOrigins(process.env.CORS_ORIGINS, frontendUrl, nodeEnv),
     jwtSecret: required('JWT_SECRET', 32),
     jwtRefreshSecret: required('JWT_REFRESH_SECRET', 32),
     supabaseUrl: required('SUPABASE_URL'),

@@ -23,7 +23,7 @@ function delayUntil(date: string) {
 function enqueueLocally(task: BackgroundTask, delaySeconds: number, attempt = 1) {
   const timer = setTimeout(async () => {
     try {
-      const { processBackgroundTask } = await import('./task-handler');
+      const { processBackgroundTask } = await import('./task-handler.js');
       await processBackgroundTask(task);
     } catch (error) {
       logger.error('local_background_task_failed', {

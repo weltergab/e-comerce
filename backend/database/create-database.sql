@@ -428,6 +428,11 @@ ALTER TABLE public.parameters DISABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO service_role;
 REVOKE EXECUTE ON FUNCTION public.create_checkout_order(uuid,uuid,text,text,text,jsonb,numeric,text,jsonb,timestamptz) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.release_order_reservation(uuid,text) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.apply_payment_state(uuid,text,text,text,text) FROM PUBLIC, anon, authenticated;

@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { enqueueDeferredTask } from '../../background/queue';
 import { DAY_SECONDS } from '../../background/tasks';
+import { getEnv } from '../../config/env';
 import { db } from '../../db/client';
 import { AppError } from '../../shared/errors';
 import { hashRefreshToken, newRefreshToken, signAccessToken } from './auth.tokens';
@@ -128,7 +129,6 @@ export async function requestPasswordReset(email: string) {
     throw cause;
   }
 
-  const { getEnv } = await import('../../config/env');
   const env = getEnv();
   if (!env.resendApiKey || !env.emailFrom) return;
   const url = `${env.frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;

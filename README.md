@@ -7,7 +7,7 @@ Os diagramas do sistema, banco de dados e organização de pastas estão em [`AR
 ## Preparação local
 
 1. Copie `backend/.env.example` para `backend/.env.local` e `frontend_ecomerce/.env.example` para `frontend_ecomerce/.env.local`.
-2. Execute `backend/database/create-database.sql` no SQL Editor do Supabase usando um usuário proprietário. O script revoga todo acesso de `anon` e `authenticated` às tabelas privadas.
+2. Execute `backend/database/create-database.sql` no SQL Editor do Supabase usando um usuário proprietário. O script revoga todo acesso de `anon` e `authenticated` às tabelas privadas e concede ao `service_role` apenas leitura e escrita necessárias. Em uma base já criada, aplique também as migrations ainda não executadas de `backend/database/migrations/`.
 3. Para trazer uma única vez o catálogo Stripe antigo para o Postgres, rode `npm run catalog:import` em `backend/`. Depois da importação, o Postgres é a autoridade e as alterações administrativas sincronizam novas versões de Price no Stripe.
 4. Registre o webhook Stripe em `/api/webhooks/stripe` e habilite os eventos `payment_intent.created`, `payment_intent.processing`, `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled` e `charge.refunded`.
 5. Rode `npm install && npm run dev` separadamente em `backend/` e `frontend_ecomerce/`.
