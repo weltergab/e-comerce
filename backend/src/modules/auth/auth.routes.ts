@@ -43,7 +43,10 @@ authRoutes.post('/register', authLimiter, asyncHandler(async (req, res) => {
 
 authRoutes.post('/refresh', authLimiter, asyncHandler(async (req, res) => {
   const token = cookieValue(req.headers.cookie, refreshCookie);
-  if (!token) throw new AppError(401, 'MISSING_REFRESH_TOKEN', 'Sessão expirada.');
+  if (!token) {
+    res.status(204).end();
+    return;
+  }
   const session = await rotateSession(token);
   setRefreshCookie(res, session.refreshToken);
   res.json({ accessToken: session.accessToken, user: session.user });

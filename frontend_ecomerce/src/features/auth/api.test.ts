@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { registerAccount } from './api';
+import { refreshSession, registerAccount } from './api';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -22,5 +22,16 @@ describe('registerAccount', () => {
       username: 'user1',
       password: 'password-123',
     });
+  });
+});
+
+describe('refreshSession', () => {
+  it('trata a ausência de sessão como estado anônimo, sem erro HTTP', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(refreshSession()).resolves.toBeNull();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
   });
 });

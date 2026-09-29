@@ -21,7 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshSession()
-      .then((session) => { setAccessToken(session.accessToken); setUser(session.user); })
+      .then((session) => {
+        setAccessToken(session?.accessToken || null);
+        setUser(session?.user || null);
+      })
       .catch(() => { setAccessToken(null); setUser(null); })
       .finally(() => setIsLoading(false));
   }, []);

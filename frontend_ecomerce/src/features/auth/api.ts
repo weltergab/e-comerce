@@ -1,4 +1,4 @@
-import { apiJson } from '@/lib/api/client';
+import { apiFetch, ApiError, apiJson, type ApiErrorBody } from '@/lib/api/client';
 import type { User } from './types';
 
 export interface AuthSession {
@@ -6,8 +6,12 @@ export interface AuthSession {
   user: User;
 }
 
-export function refreshSession() {
-  return apiJson<AuthSession>('/api/auth/refresh', { method: 'POST' });
+export async function refreshSession(): Promise<AuthSession | null> {
+  const response = await apiFetch('/api/auth/refresh', { method: 'POST' });
+  if (response.status === 204) return null;
+  const body = await response.json().catch(() => ({})) as AuthSession & ApiErrorBody;
+  if (!response.ok) throw new ApiError(response.status, body);
+  return body;
 }
 
 export function loginAccount(emailOrUsername: string, password: string) {
