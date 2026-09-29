@@ -27,20 +27,20 @@ flowchart LR
     subgraph Hosting["Vercel"]
         Static["Aplicação estática / SPA"]
         Function["Serverless Function<br/>/api/*"]
-        Cron["Cron a cada 5 minutos"]
+        Queue["Vercel Queues<br/>entrega durável e retry"]
     end
 
     subgraph Backend["Backend Express modular"]
         Middleware["CORS, Helmet, rate limit,<br/>requestId, timeout e erros"]
         Routes["Auth · Catálogo · Checkout<br/>Pedidos · Admin · Conteúdo"]
         Webhook["Webhook Stripe<br/>body bruto + assinatura"]
-        Jobs["Worker de eventos,<br/>reconciliação e manutenção"]
+        Tasks["Consumidor privado<br/>de tarefas por domínio"]
         Services["Serviços e regras de negócio"]
 
         Middleware --> Routes
         Routes --> Services
         Webhook --> Services
-        Jobs --> Services
+        Tasks --> Services
     end
 
     subgraph Data["Supabase"]
@@ -59,17 +59,18 @@ flowchart LR
     ApiClient -->|"HTTPS + cookie HttpOnly"| Function
     Function --> Middleware
     Function --> Webhook
-    Cron -->|"CRON_SECRET"| Jobs
+    Services -->|"publica tarefa idempotente"| Queue
+    Queue -->|"push privado"| Tasks
 
     Services -->|"service role / RPC"| Postgres
     Services -->|"upload e limpeza"| Storage
     Services -->|"cria e consulta PaymentIntent"| Stripe
     StripeJS -->|"confirma pagamento"| Stripe
     Stripe -->|"eventos assinados"| Webhook
-    Webhook -->|"persiste e responde 202"| Postgres
-    Jobs -->|"consome stripe_events"| Postgres
-    Jobs -->|"reconcilia pagamentos"| Stripe
-    Jobs -->|"envia outbox"| Resend
+    Webhook -->|"persiste, publica e responde 202"| Postgres
+    Tasks -->|"consome stripe_events"| Postgres
+    Tasks -->|"reconcilia um pedido"| Stripe
+    Tasks -->|"envia outbox"| Resend
     Middleware -.->|"falhas e contexto"| Sentry
     Services -.->|"falhas e contexto"| Sentry
 ```
@@ -78,9 +79,9 @@ flowchart LR
 
 1. O frontend nunca envia preço confiável: envia apenas produto e quantidade; o backend lê preço, moeda e estoque no Postgres.
 2. O checkout cria o pedido e reserva o estoque atomicamente antes de criar o `PaymentIntent` no Stripe.
-3. O webhook apenas valida e persiste o evento. O worker atualiza pagamento, pedido, reserva, ledger e outbox de e-mail de forma idempotente.
-4. A página de sucesso consulta o estado real do pedido; ela não confirma nem altera o pagamento.
-5. O cron também expira reservas, reconcilia pagamentos pendentes, envia e-mails e remove imagens órfãs.
+3. O webhook valida e persiste o evento antes de publicar uma tarefa. O consumidor atualiza pagamento, pedido, reserva, ledger e outbox de e-mail de forma idempotente.
+4. A página de sucesso consulta o estado real e pode solicitar uma reconciliação pontual e autenticada do próprio pedido.
+5. Checkout, upload e encerramento de pedido publicam tarefas adiadas para expiração de reserva, limpeza de imagem, retenção de credenciais e anonimização de PII.
 
 ## 2. Arquitetura do banco de dados
 
@@ -164,6 +165,7 @@ erDiagram
         text event_id PK
         text event_type
         text object_id
+        uuid order_id FK
         varchar processing_status
         integer attempt_count
         timestamptz received_at
@@ -229,9 +231,10 @@ erDiagram
     ORDERS ||--o{ INVENTORY_RESERVATIONS : "reserva"
     ORDERS o|--o{ INVENTORY_MOVEMENTS : "origina"
     ORDERS ||--o{ EMAIL_NOTIFICATIONS : "gera"
+    ORDERS o|--o{ STRIPE_EVENTS : "é conciliado por"
 ```
 
-`STRIPE_EVENTS` e `PARAMETERS` são tabelas independentes. `STRIPE_EVENTS.object_id` referencia logicamente objetos Stripe, sem chave estrangeira. As alterações críticas de pedido e estoque são feitas pelas funções transacionais do arquivo `backend/database/create-database.sql`.
+`STRIPE_EVENTS.object_id` referencia logicamente objetos Stripe e `order_id` mantém a associação auditável com o pedido. `PARAMETERS` é independente. As alterações críticas de pedido e estoque são feitas pelas funções transacionais do arquivo `backend/database/create-database.sql`.
 
 ### Grupos de responsabilidade do banco
 
@@ -241,7 +244,7 @@ erDiagram
 | Catálogo | `products`, `product_images`, `parameters` | Produtos oficiais, imagens e conteúdo configurável |
 | Pedidos | `orders`, `order_items`, `email_notifications` | Snapshot da compra, fulfillment e outbox de e-mail |
 | Estoque | `inventory`, `inventory_reservations`, `inventory_movements` | Saldo, reservas temporárias e ledger auditável |
-| Pagamentos | `stripe_events` e campos Stripe em `orders` | Fila durável, idempotência e estado de pagamento |
+| Pagamentos | `stripe_events` e campos Stripe em `orders` | Auditoria, idempotência e estado de pagamento |
 
 ## 3. Arquitetura de pastas e grupos de pastas
 
@@ -258,8 +261,9 @@ flowchart TB
     end
 
     subgraph BackendTree["backend/"]
-        BEntry["api/ + server/<br/>entradas Vercel e local"]
+        BEntry["api/ + server/<br/>HTTP, consumidor e entrada local"]
         BSrc["src/"]
+        BBackground["background/<br/>contratos, publicação e consumo"]
         BConfig["config/<br/>env, CORS, segurança, Sentry"]
         BDb["db/<br/>cliente Postgres/Supabase"]
         BModules["modules/<br/>módulos de negócio"]
@@ -270,6 +274,7 @@ flowchart TB
         BTests["tests/<br/>unitários e contratos"]
 
         BSrc --> BConfig
+        BSrc --> BBackground
         BSrc --> BDb
         BSrc --> BModules
         BSrc --> BPayments
@@ -284,7 +289,6 @@ flowchart TB
         MOrders["orders/"]
         MPayments["payments/"]
         MWebhooks["webhooks/"]
-        MJobs["jobs/"]
         MContent["content/"]
         MAdmin["admin/"]
     end

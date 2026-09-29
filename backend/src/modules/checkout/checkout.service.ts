@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { enqueueDeferredTask } from '../../background/queue';
 import { db } from '../../db/client';
 import { stripe } from '../../payments/stripe';
 import { AppError } from '../../shared/errors';
@@ -66,6 +67,7 @@ export async function createCheckout(input: {
   const amount = existing?.amount ?? Math.round(pricedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) * 100) / 100;
   const currency = existing?.currency ?? 'brl';
   let orderId = existing?.orderId || randomUUID();
+  const reservationExpiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
 
   if (!existing) {
     const { data: reservedOrderId, error: reserveError } = await db().rpc('create_checkout_order', {
@@ -78,7 +80,7 @@ export async function createCheckout(input: {
       p_amount: amount,
       p_currency: currency,
       p_shipping_address: input.shippingAddress,
-      p_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+      p_expires_at: reservationExpiresAt,
     });
     if (reserveError) {
       if (reserveError.message.includes('INSUFFICIENT_STOCK')) throw new AppError(409, 'INSUFFICIENT_STOCK', 'Estoque insuficiente para um dos produtos.');
@@ -101,6 +103,7 @@ export async function createCheckout(input: {
     if (!paymentIntent.client_secret) throw new Error('PaymentIntent sem client secret');
     const { error: associationError } = await db().from('orders').update({ stripe_payment_intent_id: paymentIntent.id, payment_status: paymentIntent.status }).eq('id', orderId);
     if (associationError) throw associationError;
+    await enqueueDeferredTask({ type: 'reservation-expiry', orderId }, reservationExpiresAt);
     return { orderId, clientSecret: paymentIntent.client_secret, amount, currency, items: pricedItems };
   } catch (error) {
     if (paymentIntentId) await stripe().paymentIntents.cancel(paymentIntentId).catch(() => undefined);

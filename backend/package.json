@@ -8,11 +8,13 @@
     "start": "tsx server/local.ts",
     "test": "vitest run",
     "check": "npm run build && npm test",
-    "catalog:import": "tsx scripts/import-stripe-catalog.ts"
+    "catalog:import": "tsx scripts/import-stripe-catalog.ts",
+    "tasks:backfill": "tsx scripts/backfill-background-tasks.ts"
   },
   "dependencies": {
     "@sentry/node": "^11.0.0",
     "@supabase/supabase-js": "^2.81.1",
+    "@vercel/queue": "^0.7.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",

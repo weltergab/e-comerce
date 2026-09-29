@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { enqueueDeferredTask } from '../../background/queue';
+import { DAY_SECONDS } from '../../background/tasks';
 import { db } from '../../db/client';
 import { AppError } from '../../shared/errors';
 import { hashRefreshToken, newRefreshToken, signAccessToken } from './auth.tokens';
@@ -17,16 +19,28 @@ function publicUser(row: UserRow): AuthUser {
   return { id: row.id, email: row.email, username: row.username, isAdmin: Boolean(row.is_admin) };
 }
 
+function daysFromNow(days: number) {
+  return new Date(Date.now() + days * DAY_SECONDS * 1000).toISOString();
+}
+
 async function issueSession(user: AuthUser, familyId = randomUUID()) {
   const refreshToken = newRefreshToken();
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString();
-  const { error } = await db().from('refresh_tokens').insert({
+  const expiresAt = daysFromNow(30);
+  const { data: storedToken, error } = await db().from('refresh_tokens').insert({
     user_id: user.id,
     token_hash: hashRefreshToken(refreshToken),
     family_id: familyId,
     expires_at: expiresAt,
-  });
-  if (error) throw new AppError(500, 'SESSION_CREATE_FAILED', 'Não foi possível iniciar a sessão.');
+  }).select('id').single();
+  if (error || !storedToken) throw new AppError(500, 'SESSION_CREATE_FAILED', 'Não foi possível iniciar a sessão.');
+
+  try {
+    const cleanupAt = new Date(Date.parse(expiresAt) + 30 * DAY_SECONDS * 1000).toISOString();
+    await enqueueDeferredTask({ type: 'refresh-token-cleanup', tokenId: storedToken.id }, cleanupAt);
+  } catch (cause) {
+    await db().from('refresh_tokens').delete().eq('id', storedToken.id);
+    throw cause;
+  }
 
   return {
     accessToken: signAccessToken({ userId: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin }),
@@ -69,6 +83,7 @@ export async function rotateSession(rawToken: string) {
     await db().from('refresh_tokens').update({ revoked_at: revokedAt }).eq('family_id', data.family_id).is('revoked_at', null);
     throw new AppError(401, 'REFRESH_REPLAY', 'Sessão inválida. Entre novamente.');
   }
+  await enqueueDeferredTask({ type: 'refresh-token-cleanup', tokenId: data.id }, daysFromNow(30));
 
   const { data: userData } = await db().from('users').select('id,email,username,password_hash,is_admin').eq('id', data.user_id).single();
   if (!userData) throw new AppError(401, 'USER_NOT_FOUND', 'Sessão inválida.');
@@ -78,7 +93,13 @@ export async function rotateSession(rawToken: string) {
 export async function revokeSession(rawToken?: string) {
   if (!rawToken) return;
   const { data } = await db().from('refresh_tokens').select('family_id').eq('token_hash', hashRefreshToken(rawToken)).maybeSingle();
-  if (data?.family_id) await db().from('refresh_tokens').update({ revoked_at: new Date().toISOString() }).eq('family_id', data.family_id).is('revoked_at', null);
+  if (!data?.family_id) return;
+  const { data: familyTokens } = await db().from('refresh_tokens').select('id').eq('family_id', data.family_id);
+  await db().from('refresh_tokens').update({ revoked_at: new Date().toISOString() }).eq('family_id', data.family_id).is('revoked_at', null);
+  const cleanupAt = daysFromNow(30);
+  await Promise.all((familyTokens || []).map((token) =>
+    enqueueDeferredTask({ type: 'refresh-token-cleanup', tokenId: token.id }, cleanupAt)
+  ));
 }
 
 export async function currentUser(userId: string) {
@@ -91,12 +112,21 @@ export async function requestPasswordReset(email: string) {
   const { data: user } = await db().from('users').select('id,email,username').eq('email', email.toLowerCase()).maybeSingle();
   if (!user) return;
   const token = randomBytes(32).toString('base64url');
+  const expiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
   const { data: reset, error } = await db().from('password_reset_tokens').insert({
     user_id: user.id,
     token_hash: hashRefreshToken(token),
-    expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+    expires_at: expiresAt,
   }).select('id').single();
   if (error || !reset) throw new AppError(500, 'PASSWORD_RESET_FAILED', 'Não foi possível iniciar a recuperação.');
+
+  try {
+    const cleanupAt = new Date(Date.parse(expiresAt) + 7 * DAY_SECONDS * 1000).toISOString();
+    await enqueueDeferredTask({ type: 'password-reset-token-cleanup', tokenId: reset.id }, cleanupAt);
+  } catch (cause) {
+    await db().from('password_reset_tokens').delete().eq('id', reset.id);
+    throw cause;
+  }
 
   const { getEnv } = await import('../../config/env');
   const env = getEnv();
@@ -120,5 +150,10 @@ export async function resetPassword(token: string, password: string) {
   const { data: used } = await db().from('password_reset_tokens').update({ used_at: now }).eq('id', reset.id).is('used_at', null).select('id').maybeSingle();
   if (!used) throw new AppError(400, 'INVALID_RESET_TOKEN', 'Link já utilizado.');
   await db().from('users').update({ password_hash: passwordHash }).eq('id', reset.user_id);
+  const { data: activeSessions } = await db().from('refresh_tokens').select('id').eq('user_id', reset.user_id).is('revoked_at', null);
   await db().from('refresh_tokens').update({ revoked_at: now }).eq('user_id', reset.user_id).is('revoked_at', null);
+  const cleanupAt = daysFromNow(30);
+  await Promise.all((activeSessions || []).map((session) =>
+    enqueueDeferredTask({ type: 'refresh-token-cleanup', tokenId: session.id }, cleanupAt)
+  ));
 }

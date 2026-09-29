@@ -1,16 +1,18 @@
 import { Router, raw } from 'express';
 import type Stripe from 'stripe';
+import { enqueueTask } from '../../background/queue';
 import { getEnv } from '../../config/env';
-import { db } from '../../db/client';
 import { stripe } from '../../payments/stripe';
 import { AppError } from '../../shared/errors';
 import { asyncHandler } from '../../shared/http';
+import { persistPaymentEvent, supportedPaymentEvents } from '../payments/payment-events.service';
 
 export const stripeWebhookRoutes = Router();
 
 stripeWebhookRoutes.post('/', raw({ type: 'application/json', limit: '256kb' }), asyncHandler(async (req, res) => {
   const signature = req.header('stripe-signature');
   if (!signature) throw new AppError(400, 'MISSING_STRIPE_SIGNATURE', 'Assinatura ausente.');
+
   let event: Stripe.Event;
   try {
     event = stripe().webhooks.constructEvent(req.body, signature, getEnv().stripeWebhookSecret);
@@ -18,11 +20,7 @@ stripeWebhookRoutes.post('/', raw({ type: 'application/json', limit: '256kb' }),
     throw new AppError(400, 'INVALID_STRIPE_SIGNATURE', 'Assinatura inválida.');
   }
 
-  const accepted = new Set([
-    'payment_intent.created', 'payment_intent.processing', 'payment_intent.succeeded',
-    'payment_intent.payment_failed', 'payment_intent.canceled', 'charge.refunded',
-  ]);
-  if (!accepted.has(event.type)) {
+  if (!supportedPaymentEvents.has(event.type)) {
     res.status(200).json({ received: true, ignored: true });
     return;
   }
@@ -33,12 +31,10 @@ stripeWebhookRoutes.post('/', raw({ type: 'application/json', limit: '256kb' }),
     : object.id;
   if (!objectId) throw new AppError(400, 'INVALID_STRIPE_EVENT', 'Evento sem PaymentIntent.');
 
-  const { error } = await db().from('stripe_events').upsert({
-    event_id: event.id,
-    event_type: event.type,
-    object_id: objectId,
-    processing_status: 'received',
-  }, { onConflict: 'event_id', ignoreDuplicates: true });
-  if (error) throw new AppError(503, 'EVENT_PERSIST_FAILED', 'Evento não persistido; tente novamente.');
+  const orderId = event.type === 'charge.refunded'
+    ? undefined
+    : (event.data.object as Stripe.PaymentIntent).metadata.orderId;
+  await persistPaymentEvent({ eventId: event.id, eventType: event.type, objectId, orderId });
+  await enqueueTask({ type: 'payment-event', eventId: event.id });
   res.status(202).json({ received: true });
 }));

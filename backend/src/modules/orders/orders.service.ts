@@ -1,5 +1,8 @@
 import { db } from '../../db/client';
 import { AppError } from '../../shared/errors';
+import { enqueueDeferredTask } from '../../background/queue';
+import { DAY_SECONDS } from '../../background/tasks';
+import { getEnv } from '../../config/env';
 
 function formatOrder(order: Record<string, unknown>, items: Array<Record<string, unknown>>) {
   return {
@@ -35,6 +38,10 @@ export async function updateFulfillment(orderId: string, status: unknown, tracki
     throw new AppError(400, 'INVALID_FULFILLMENT_STATUS', 'Status de entrega inválido.');
   }
   const tracking = typeof trackingCode === 'string' ? trackingCode.trim().slice(0, 160) : '';
+  if (status === 'delivered') {
+    const notBefore = new Date(Date.now() + getEnv().piiRetentionDays * DAY_SECONDS * 1000).toISOString();
+    await enqueueDeferredTask({ type: 'order-pii-redaction', orderId }, notBefore);
+  }
   const { error } = await db().rpc('update_order_fulfillment', { p_order_id: orderId, p_next_status: status, p_tracking_code: tracking });
   if (error) throw new AppError(409, 'INVALID_FULFILLMENT_TRANSITION', 'A transição de entrega não é permitida.');
 }

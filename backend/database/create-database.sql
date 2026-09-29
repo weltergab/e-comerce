@@ -120,12 +120,15 @@ CREATE TABLE IF NOT EXISTS public.stripe_events (
   event_id text PRIMARY KEY,
   event_type text NOT NULL,
   object_id text NOT NULL,
+  order_id uuid REFERENCES public.orders(id) ON DELETE SET NULL,
   received_at timestamptz NOT NULL DEFAULT now(),
   processing_status varchar(20) NOT NULL DEFAULT 'received' CHECK (processing_status IN ('received', 'processing', 'processed', 'failed')),
   processed_at timestamptz,
   error_summary text,
   attempt_count integer NOT NULL DEFAULT 0
 );
+ALTER TABLE public.stripe_events
+  ADD COLUMN IF NOT EXISTS order_id uuid REFERENCES public.orders(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS public.refresh_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -266,18 +269,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.release_expired_reservations()
-RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
-DECLARE v_order uuid; v_count integer := 0;
-BEGIN
-  FOR v_order IN SELECT DISTINCT order_id FROM public.inventory_reservations WHERE status = 'reserved' AND expires_at < now()
-  LOOP
-    PERFORM public.release_order_reservation(v_order, 'expired');
-    v_count := v_count + 1;
-  END LOOP;
-  RETURN v_count;
-END;
-$$;
+DROP FUNCTION IF EXISTS public.release_expired_reservations();
 
 CREATE OR REPLACE FUNCTION public.apply_payment_state(
   p_order_id uuid,
@@ -380,31 +372,29 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.redact_old_order_pii(p_retention_days integer)
-RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
-DECLARE v_count integer;
+DROP FUNCTION IF EXISTS public.redact_old_order_pii(integer);
+CREATE OR REPLACE FUNCTION public.redact_order_pii(p_order_id uuid, p_retention_days integer)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+DECLARE v_redacted uuid;
 BEGIN
-  WITH redacted AS (
-    UPDATE public.orders SET
-      user_id = NULL,
-      user_email = 'redacted@invalid',
-      user_name = 'Redigido',
-      shipping_address = '{"redacted":true}'::jsonb,
-      tracking_code = NULL,
-      admin_notes = NULL,
-      admin_notes_updated_at = NULL,
-      admin_notes_updated_by = NULL
-    WHERE order_status IN ('delivered', 'canceled', 'refunded')
-      AND updated_at < now() - make_interval(days => p_retention_days)
-      AND shipping_address <> '{"redacted":true}'::jsonb
-    RETURNING id
-  )
-  SELECT count(*) INTO v_count FROM redacted;
+  UPDATE public.orders SET
+    user_id = NULL,
+    user_email = 'redacted@invalid',
+    user_name = 'Redigido',
+    shipping_address = '{"redacted":true}'::jsonb,
+    tracking_code = NULL,
+    admin_notes = NULL,
+    admin_notes_updated_at = NULL,
+    admin_notes_updated_by = NULL
+  WHERE id = p_order_id
+    AND order_status IN ('delivered', 'canceled', 'refunded')
+    AND updated_at <= now() - make_interval(days => p_retention_days)
+    AND shipping_address <> '{"redacted":true}'::jsonb
+  RETURNING id INTO v_redacted;
+  IF v_redacted IS NULL THEN RETURN false; END IF;
   UPDATE public.email_notifications SET recipient = 'redacted@invalid', recipient_name = 'Redigido', error_summary = NULL
-  WHERE order_id IN (SELECT id FROM public.orders WHERE shipping_address = '{"redacted":true}'::jsonb);
-  DELETE FROM public.password_reset_tokens WHERE expires_at < now() - interval '7 days';
-  DELETE FROM public.refresh_tokens WHERE expires_at < now() - interval '30 days' OR revoked_at < now() - interval '30 days';
-  RETURN v_count;
+  WHERE order_id = p_order_id;
+  RETURN true;
 END;
 $$;
 
@@ -440,17 +430,15 @@ REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.create_checkout_order(uuid,uuid,text,text,text,jsonb,numeric,text,jsonb,timestamptz) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.release_order_reservation(uuid,text) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.release_expired_reservations() FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.apply_payment_state(uuid,text,text,text,text) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.admin_adjust_inventory(text,integer,uuid,text) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.manual_return_inventory(uuid,text,integer,uuid,text) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.update_order_fulfillment(uuid,text,text) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.redact_old_order_pii(integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.redact_order_pii(uuid,integer) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_checkout_order(uuid,uuid,text,text,text,jsonb,numeric,text,jsonb,timestamptz) TO service_role;
 GRANT EXECUTE ON FUNCTION public.release_order_reservation(uuid,text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.release_expired_reservations() TO service_role;
 GRANT EXECUTE ON FUNCTION public.apply_payment_state(uuid,text,text,text,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.admin_adjust_inventory(text,integer,uuid,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.manual_return_inventory(uuid,text,integer,uuid,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.update_order_fulfillment(uuid,text,text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.redact_old_order_pii(integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.redact_order_pii(uuid,integer) TO service_role;

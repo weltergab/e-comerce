@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminProductCard } from '@/components/admin/AdminProductCard';
+import { AdminDialog, AdminDialogHeader } from '@/components/admin/AdminDialog';
 import { ProductImageManager, ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
@@ -14,6 +15,7 @@ interface StripeProduct {
   description: string | null;
   images: string[];
   active: boolean;
+  category?: string;
   metadata: {
     stock?: string;
   };
@@ -50,6 +52,20 @@ interface IntroductionHeaderContent {
   miniText: string;
 }
 
+function InventoryStat({ title, value, color, icon }: { title: string; value: number; color: string; icon: ReactNode }) {
+  return (
+    <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>{title}</h3>
+          <p className="text-3xl font-bold" style={{ color }}>{value}</p>
+        </div>
+        {icon}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -80,7 +96,7 @@ export default function AdminPage() {
           currency: p.price?.currency || 'brl',
           image: p.images[0] || '',
           images: p.images || [],
-          category: 'Produtos',
+          category: p.category || 'Geral',
           stock: parseInt(p.metadata?.stock || '0'),
         }));
         setProducts(convertedProducts);
@@ -315,65 +331,11 @@ export default function AdminPage() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div
-              className="rounded-lg p-6"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                    Produtos Cadastrados
-                  </h3>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>
-                    {products.length}
-                  </p>
-                </div>
-                <Package className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
-              </div>
-            </div>
+            <InventoryStat title="Produtos cadastrados" value={products.length} color="var(--color-primary)" icon={<Package className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />} />
 
-            <div
-              className="rounded-lg p-6"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                    Em Estoque
-                  </h3>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--color-success)' }}>
-                    {products.filter(p => p.stock > 0).length}
-                  </p>
-                </div>
-                <CheckCircle className="w-10 h-10" style={{ color: 'var(--color-success)' }} />
-              </div>
-            </div>
+            <InventoryStat title="Em estoque" value={products.filter((product) => product.stock > 0).length} color="var(--color-success)" icon={<CheckCircle className="w-10 h-10" style={{ color: 'var(--color-success)' }} />} />
 
-            <div
-              className="rounded-lg p-6"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
-                    Sem Estoque
-                  </h3>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--color-error)' }}>
-                    {products.filter(p => p.stock === 0).length}
-                  </p>
-                </div>
-                <AlertTriangle className="w-10 h-10" style={{ color: 'var(--color-error)' }} />
-              </div>
-            </div>
+            <InventoryStat title="Sem estoque" value={products.filter((product) => product.stock === 0).length} color="var(--color-error)" icon={<AlertTriangle className="w-10 h-10" style={{ color: 'var(--color-error)' }} />} />
           </div>
         </div>
 
@@ -515,56 +477,13 @@ function ProductModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center p-2 sm:p-6 z-50"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-lg w-[calc(100vw-1rem)] sm:w-full max-w-4xl p-4 sm:p-6 max-h-[94vh] sm:max-h-[88vh] overflow-y-auto"
-        style={{
-          backgroundColor: 'var(--color-background)',
-          border: '2px solid var(--color-borderLight)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-start gap-3 mb-5">
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="hidden sm:block p-3 rounded-lg"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-borderLight)',
-              }}
-            >
-              <Package className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-                {product ? 'Editar Produto' : 'Novo Produto'}
-              </h2>
-              <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                {product ? 'Atualize as informações do produto' : 'Preencha os dados do novo produto'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            type="button"
-            className="text-3xl leading-none transition-colors p-2 rounded-full flex-shrink-0"
-            style={{ color: 'var(--color-textSecondary)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--color-error)';
-              e.currentTarget.style.backgroundColor = 'var(--color-surfaceHover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--color-textSecondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            ×
-          </button>
-        </div>
+    <AdminDialog onClose={onClose}>
+        <AdminDialogHeader
+          icon={<Package className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />}
+          title={product ? 'Editar Produto' : 'Novo Produto'}
+          description={product ? 'Atualize as informações do produto' : 'Preencha os dados do novo produto'}
+          onClose={onClose}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div
@@ -732,8 +651,7 @@ function ProductModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AdminDialog>
   );
 }
 
@@ -811,48 +729,13 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center p-2 sm:p-6 z-50"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-lg w-[calc(100vw-1rem)] sm:w-full max-w-4xl p-4 sm:p-6 max-h-[94vh] sm:max-h-[88vh] overflow-y-auto"
-        style={{
-          backgroundColor: 'var(--color-background)',
-          border: '2px solid var(--color-borderLight)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-start gap-3 mb-5">
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="hidden sm:block p-3 rounded-lg"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-borderLight)',
-              }}
-            >
-              <MessageSquare className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-                Frases da Introdução
-              </h2>
-              <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                Textos exibidos no topo da página inicial
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            type="button"
-            className="text-3xl leading-none transition-colors p-2 rounded-full flex-shrink-0"
-            style={{ color: 'var(--color-textSecondary)' }}
-          >
-            ×
-          </button>
-        </div>
+    <AdminDialog onClose={onClose}>
+        <AdminDialogHeader
+          icon={<MessageSquare className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />}
+          title="Frases da Introdução"
+          description="Textos exibidos no topo da página inicial"
+          onClose={onClose}
+        />
 
         {loading ? (
           <p style={{ color: 'var(--color-textSecondary)' }}>Carregando frases...</p>
@@ -925,7 +808,6 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
             </div>
           </form>
         )}
-      </div>
-    </div>
+    </AdminDialog>
   );
 }

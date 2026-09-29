@@ -1,6 +1,14 @@
 import { apiJson } from '@/lib/api/client';
 import type { Order } from '@/types';
 
+export interface OrderStatus {
+  id: string;
+  orderStatus: string;
+  paymentStatus: string;
+  amount: number;
+  currency: string;
+}
+
 export function getMyOrders() {
   return apiJson<{ orders: Order[]; nextCursor: string | null }>('/api/orders?limit=50');
 }
@@ -13,4 +21,12 @@ export function getAdminOrders(filters: { startDate: string; endDate: string; st
 
 export function saveAdminNotes(orderId: string, adminNotes: string | null) {
   return apiJson<{ order: Order }>(`/api/admin/orders/${orderId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminNotes }) });
+}
+
+export function getOrderStatus(orderId: string) {
+  return apiJson<{ order: OrderStatus }>(`/api/orders/${encodeURIComponent(orderId)}/status`);
+}
+
+export function requestPaymentReconciliation(orderId: string) {
+  return apiJson<{ queued: boolean }>(`/api/orders/${encodeURIComponent(orderId)}/payment-reconciliation`, { method: 'POST' });
 }

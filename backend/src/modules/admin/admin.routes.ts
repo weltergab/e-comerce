@@ -11,7 +11,7 @@ import { archiveProduct, createProduct, getAdminProduct, listAdminProducts, upda
 import { parsePagination, parseProductInput, type ProductInput } from '../catalog/catalog.schemas';
 import { recordProductImage } from '../catalog/product-images.service';
 import { listAdminOrders, updateAdminNotes, updateFulfillment } from '../orders/orders.service';
-import { operationalMetrics } from '../jobs/operations.service';
+import { operationalMetrics } from './operations.service';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
 const bucket = 'product-images';
@@ -24,7 +24,16 @@ adminRoutes.get('/health', asyncHandler(async (_req, res) => {
     db().from('users').select('id', { head: true, count: 'exact' }),
     stripe().balance.retrieve().catch(() => null),
   ]);
-  res.json({ ok: !dbError && Boolean(stripeBalance), services: { backend: { ok: true }, database: { ok: !dbError }, stripe: { ok: Boolean(stripeBalance), mode: stripeBalance?.livemode ? 'live' : 'test' } } });
+  const checkedAt = new Date().toISOString();
+  res.json({
+    ok: !dbError && Boolean(stripeBalance),
+    checkedAt,
+    services: {
+      backend: { ok: true, label: 'Backend', message: 'API respondendo normalmente.', checkedAt, uptimeSeconds: Math.round(process.uptime()) },
+      database: { ok: !dbError, label: 'Banco de dados', message: dbError ? 'Falha na conexão com o banco.' : 'Conexão com o banco ativa.', checkedAt },
+      stripe: { ok: Boolean(stripeBalance), label: 'Stripe', message: stripeBalance ? 'Conexão com pagamentos ativa.' : 'Falha na conexão com pagamentos.', checkedAt, mode: stripeBalance?.livemode ? 'live' : 'test' },
+    },
+  });
 }));
 adminRoutes.get('/metrics', asyncHandler(async (_req, res) => res.json({ metrics: await operationalMetrics() })));
 

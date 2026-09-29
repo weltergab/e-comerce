@@ -1,8 +1,7 @@
-import { Product } from '@/types';
-import { Card, CardImage, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { formatCurrency } from '@/lib/utils/format';
+import type { Product } from '@/types';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { ProductSummary } from '@/components/product/ProductSummary';
 import { Pencil, Trash2 } from 'lucide-react';
 
 interface AdminProductCardProps {
@@ -11,73 +10,15 @@ interface AdminProductCardProps {
   onDelete: (id: string) => void;
 }
 
-export const AdminProductCard = ({ product, onEdit, onDelete }: AdminProductCardProps) => {
-  const price = product.price || 0;
-  const stock = product.stock || 0;
-
+export function AdminProductCard({ product, onEdit, onDelete }: AdminProductCardProps) {
   return (
     <Card hover className="h-full flex flex-col">
-      <CardImage src={product.image} images={product.images} alt={product.name} />
-      <CardContent className="flex-1 flex flex-col">
-        <div className="mb-2">
-          <Badge>{product.category}</Badge>
+      <ProductSummary product={product} actions={
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={() => onEdit(product)} variant="outline" size="sm" fullWidth><Pencil className="w-4 h-4" />Editar</Button>
+          <Button onClick={() => onDelete(product.id)} variant="danger" size="sm" fullWidth><Trash2 className="w-4 h-4" />Excluir</Button>
         </div>
-        <h3
-          className="text-lg font-bold mb-2 line-clamp-1"
-          style={{ color: 'var(--color-text)' }}
-        >
-          {product.name}
-        </h3>
-        {/* Descrição com altura fixa para manter alinhamento */}
-        <div className="h-12 mb-4">
-          {product.description && (
-            <p
-              className="text-sm line-clamp-2"
-              style={{ color: 'var(--color-textSecondary)' }}
-            >
-              {product.description}
-            </p>
-          )}
-        </div>
-        <div className="mt-auto space-y-4">
-          <div className="flex items-center justify-between">
-            <span
-              className="text-2xl font-bold"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              {formatCurrency(price)}
-            </span>
-            <span
-              className="text-sm"
-              style={{ color: 'var(--color-textMuted)' }}
-            >
-              Estoque: {stock}
-            </span>
-          </div>
-
-          {/* Botões de Admin */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              onClick={() => onEdit(product)}
-              variant="outline"
-              size="sm"
-              fullWidth
-            >
-              <Pencil className="w-4 h-4" />
-              Editar
-            </Button>
-            <Button
-              onClick={() => onDelete(product.id)}
-              variant="danger"
-              size="sm"
-              fullWidth
-            >
-              <Trash2 className="w-4 h-4" />
-              Excluir
-            </Button>
-          </div>
-        </div>
-      </CardContent>
+      } />
     </Card>
   );
-};
+}

@@ -7,15 +7,8 @@ import { createCheckout } from './checkout.service';
 
 export const checkoutRoutes = Router();
 
-checkoutRoutes.post('/', checkoutLimiter, requireAuth, asyncHandler(async (req, res) => {
-  const input = parseCheckout(req.body);
-  const idempotencyKey = parseIdempotencyKey(req.header('idempotency-key'));
-  const result = await createCheckout({ user: req.auth!, ...input, idempotencyKey });
-  res.status(201).json(result);
-}));
-
-// Compatibilidade temporária de URL; o contrato seguro é idêntico a POST /api/checkout.
-checkoutRoutes.post('/payment-intent', checkoutLimiter, requireAuth, asyncHandler(async (req, res) => {
+// /payment-intent permanece como alias temporário do contrato canônico /.
+checkoutRoutes.post(['/', '/payment-intent'], checkoutLimiter, requireAuth, asyncHandler(async (req, res) => {
   const input = parseCheckout(req.body);
   const idempotencyKey = parseIdempotencyKey(req.header('idempotency-key'));
   const result = await createCheckout({ user: req.auth!, ...input, idempotencyKey });

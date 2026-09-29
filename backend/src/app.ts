@@ -9,7 +9,6 @@ import { authRoutes } from './modules/auth/auth.routes';
 import { catalogRoutes } from './modules/catalog/catalog.routes';
 import { checkoutRoutes } from './modules/checkout/checkout.routes';
 import { adminContentRoutes, contentRoutes } from './modules/content/content.routes';
-import { jobRoutes } from './modules/jobs/jobs.routes';
 import { orderRoutes } from './modules/orders/orders.routes';
 import { stripeWebhookRoutes } from './modules/webhooks/stripe-webhook.routes';
 import { initMonitoring } from './config/monitoring';
@@ -55,7 +54,6 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/parameters', contentRoutes);
 app.use('/api/admin/parameters', adminContentRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/jobs', jobRoutes);
 app.use(notFound, errorHandler);
 
 export function startServer() {

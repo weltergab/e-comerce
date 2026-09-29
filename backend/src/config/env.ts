@@ -14,7 +14,6 @@ export interface AppEnv {
   supabaseSecretKey: string;
   stripeSecretKey: string;
   stripeWebhookSecret: string;
-  cronSecret: string;
   imageHostAllowlist: string[];
   resendApiKey?: string;
   emailFrom?: string;
@@ -54,7 +53,6 @@ export function getEnv(): AppEnv {
     supabaseSecretKey: required('SUPABASE_SECRET_KEY'),
     stripeSecretKey: required('STRIPE_SECRET_KEY'),
     stripeWebhookSecret: required('STRIPE_WEBHOOK_SECRET'),
-    cronSecret: required('CRON_SECRET', 24),
     imageHostAllowlist: (process.env.IMAGE_HOST_ALLOWLIST || '')
       .split(',')
       .map((host) => host.trim().toLowerCase())

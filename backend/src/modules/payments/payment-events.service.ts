@@ -1,7 +1,31 @@
 import { db } from '../../db/client';
 import { stripe } from '../../payments/stripe';
+import { Sentry } from '../../config/monitoring';
 import { AppError } from '../../shared/errors';
 import { logger } from '../../shared/logger';
+
+export const supportedPaymentEvents = new Set([
+  'payment_intent.created',
+  'payment_intent.processing',
+  'payment_intent.succeeded',
+  'payment_intent.payment_failed',
+  'payment_intent.canceled',
+  'charge.refunded',
+]);
+
+interface PaymentEventInput {
+  eventId: string;
+  eventType: string;
+  objectId: string;
+  orderId?: string;
+}
+
+interface PaymentResult {
+  orderId?: string;
+  paymentStatus?: string;
+  updatedAt?: string;
+  exhausted?: boolean;
+}
 
 export function paymentStatus(eventType: string, stripeStatus: string) {
   if (eventType === 'payment_intent.succeeded') return 'succeeded';
@@ -11,87 +35,148 @@ export function paymentStatus(eventType: string, stripeStatus: string) {
   return stripeStatus;
 }
 
-export async function processPaymentEvents(limit = 20) {
-  const { data: events, error } = await db()
-    .from('stripe_events')
-    .select('*')
-    .in('processing_status', ['received', 'failed'])
-    .lt('attempt_count', 10)
-    .order('received_at', { ascending: true })
-    .limit(limit);
-  if (error) throw new AppError(500, 'EVENT_QUEUE_READ_FAILED', 'Não foi possível ler a fila de pagamentos.');
+export async function persistPaymentEvent(input: PaymentEventInput) {
+  const { error } = await db().from('stripe_events').upsert({
+    event_id: input.eventId,
+    event_type: input.eventType,
+    object_id: input.objectId,
+    order_id: input.orderId || null,
+    processing_status: 'received',
+  }, { onConflict: 'event_id', ignoreDuplicates: true });
+  if (error) throw new AppError(503, 'EVENT_PERSIST_FAILED', 'Evento não persistido; tente novamente.');
+}
 
-  let processed = 0;
-  let failed = 0;
-  for (const event of events || []) {
-    await db().from('stripe_events').update({ processing_status: 'processing', attempt_count: Number(event.attempt_count) + 1 }).eq('event_id', event.event_id);
-    try {
-      const intent = await stripe().paymentIntents.retrieve(event.object_id);
-      const method = typeof intent.payment_method === 'string'
-        ? await stripe().paymentMethods.retrieve(intent.payment_method).then((value) => value.type).catch(() => null)
-        : null;
-      if (event.event_type === 'charge.refunded') {
-        const { error: settlementError } = await db().rpc('apply_payment_state', {
-          p_order_id: intent.metadata.orderId,
-          p_event_id: `${event.event_id}:settlement`,
-          p_event_type: 'refund_settlement',
-          p_payment_status: 'succeeded',
-          p_payment_method: method,
-        });
-        if (settlementError) throw settlementError;
-      }
-      const { error: applyError } = await db().rpc('apply_payment_state', {
-        p_order_id: intent.metadata.orderId,
-        p_event_id: event.event_id,
-        p_event_type: event.event_type,
-        p_payment_status: paymentStatus(event.event_type, intent.status),
+async function orderResult(orderId?: string): Promise<PaymentResult> {
+  if (!orderId) return {};
+  const { data, error } = await db().from('orders').select('id,payment_status,updated_at').eq('id', orderId).maybeSingle();
+  if (error) throw new AppError(500, 'ORDER_READ_FAILED', 'Não foi possível consultar o pedido processado.');
+  return data ? { orderId: data.id, paymentStatus: data.payment_status, updatedAt: data.updated_at } : { orderId };
+}
+
+export async function processPaymentEvent(eventId: string): Promise<PaymentResult> {
+  const { data: event, error } = await db().from('stripe_events').select('*').eq('event_id', eventId).maybeSingle();
+  if (error) throw new AppError(500, 'EVENT_READ_FAILED', 'Não foi possível ler o evento de pagamento.');
+  if (!event) throw new AppError(404, 'EVENT_NOT_FOUND', 'Evento de pagamento não encontrado.');
+  if (event.processing_status === 'processed') return orderResult(event.order_id);
+
+  const attempt = Number(event.attempt_count) + 1;
+  if (attempt > 10) {
+    const exhausted = { ...(await orderResult(event.order_id)), exhausted: true };
+    logger.error('stripe_event_attempts_exhausted', { eventId, paymentIntentId: event.object_id });
+    Sentry.captureMessage('Stripe event attempts exhausted', { level: 'error', extra: { eventId, paymentIntentId: event.object_id } });
+    return exhausted;
+  }
+
+  const { error: processingError } = await db().from('stripe_events')
+    .update({ processing_status: 'processing', attempt_count: attempt })
+    .eq('event_id', eventId);
+  if (processingError) throw processingError;
+  try {
+    const intent = await stripe().paymentIntents.retrieve(event.object_id);
+    const orderId = intent.metadata.orderId || event.order_id;
+    if (!orderId) throw new Error('PaymentIntent sem orderId');
+    const method = typeof intent.payment_method === 'string'
+      ? await stripe().paymentMethods.retrieve(intent.payment_method).then((value) => value.type).catch(() => null)
+      : null;
+
+    if (event.event_type === 'charge.refunded') {
+      const { error: settlementError } = await db().rpc('apply_payment_state', {
+        p_order_id: orderId,
+        p_event_id: `${event.event_id}:settlement`,
+        p_event_type: 'refund_settlement',
+        p_payment_status: 'succeeded',
         p_payment_method: method,
       });
-      if (applyError) throw applyError;
-      await db().from('stripe_events').update({ processing_status: 'processed', processed_at: new Date().toISOString(), error_summary: null }).eq('event_id', event.event_id);
-      processed += 1;
-      logger.info('stripe_event_processed', { eventId: event.event_id, orderId: intent.metadata.orderId, paymentIntentId: intent.id });
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : String(cause);
-      await db().from('stripe_events').update({ processing_status: 'failed', error_summary: message.slice(0, 500) }).eq('event_id', event.event_id);
-      failed += 1;
-      logger.error('stripe_event_failed', { eventId: event.event_id, paymentIntentId: event.object_id, error: message });
+      if (settlementError) throw settlementError;
     }
+
+    const { error: applyError } = await db().rpc('apply_payment_state', {
+      p_order_id: orderId,
+      p_event_id: event.event_id,
+      p_event_type: event.event_type,
+      p_payment_status: paymentStatus(event.event_type, intent.status),
+      p_payment_method: method,
+    });
+    if (applyError) throw applyError;
+
+    const { error: processedError } = await db().from('stripe_events').update({
+      order_id: orderId,
+      processing_status: 'processed',
+      processed_at: new Date().toISOString(),
+      error_summary: null,
+    }).eq('event_id', event.event_id);
+    if (processedError) throw processedError;
+    logger.info('stripe_event_processed', { eventId, orderId, paymentIntentId: intent.id });
+    return orderResult(orderId);
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    await db().from('stripe_events').update({ processing_status: 'failed', error_summary: message.slice(0, 500) }).eq('event_id', eventId);
+    logger.error('stripe_event_failed', { eventId, paymentIntentId: event.object_id, attempt, error: message });
+    throw cause;
   }
-  return { processed, failed };
 }
 
-export async function reconcilePendingOrders(limit = 20) {
-  await expireCheckoutReservations(limit);
-  const { data, error } = await db().from('orders').select('id,stripe_payment_intent_id').in('payment_status', ['requires_payment_method', 'requires_action', 'processing']).not('stripe_payment_intent_id', 'is', null).order('created_at', { ascending: true }).limit(limit);
-  if (error) throw new AppError(500, 'RECONCILIATION_READ_FAILED', 'Não foi possível consultar pedidos pendentes.');
-  for (const order of data || []) {
-    const intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
-    const eventId = `reconcile:${intent.id}:${intent.status}:${intent.created}`;
-    await db().from('stripe_events').upsert({ event_id: eventId, event_type: `reconcile.${intent.status}`, object_id: intent.id, processing_status: 'received' }, { onConflict: 'event_id', ignoreDuplicates: true });
-  }
-  return { queued: data?.length || 0 };
+function reconciliationEventType(status: string) {
+  if (status === 'succeeded') return 'payment_intent.succeeded';
+  if (status === 'canceled') return 'payment_intent.canceled';
+  return `reconcile.${status}`;
 }
 
-async function expireCheckoutReservations(limit: number) {
-  const { data: reservations } = await db().from('inventory_reservations').select('order_id').eq('status', 'reserved').lt('expires_at', new Date().toISOString()).limit(limit);
-  const orderIds = [...new Set((reservations || []).map((reservation) => reservation.order_id))];
-  if (!orderIds.length) return;
-  const { data: orders } = await db().from('orders').select('id,stripe_payment_intent_id').in('id', orderIds);
-  for (const order of orders || []) {
-    if (!order.stripe_payment_intent_id) {
-      await db().rpc('release_order_reservation', { p_order_id: order.id, p_reason: 'expired' });
-      continue;
-    }
-    const intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
-    if (intent.status === 'succeeded') {
-      await db().from('stripe_events').upsert({ event_id: `expire-reconcile:${intent.id}:succeeded`, event_type: 'payment_intent.succeeded', object_id: intent.id, processing_status: 'received' }, { onConflict: 'event_id', ignoreDuplicates: true });
-      continue;
-    }
-    if (intent.status !== 'canceled') {
-      const canceled = await stripe().paymentIntents.cancel(intent.id).catch(() => null);
-      if (!canceled) continue;
-    }
-    await db().rpc('release_order_reservation', { p_order_id: order.id, p_reason: 'expired' });
+async function persistIntentState(intent: Awaited<ReturnType<ReturnType<typeof stripe>['paymentIntents']['retrieve']>>, prefix: string) {
+  const orderId = intent.metadata.orderId;
+  if (!orderId) throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'O pagamento não está associado a um pedido.');
+  const eventType = reconciliationEventType(intent.status);
+  const eventId = `${prefix}:${intent.id}:${intent.status}:${intent.created}`;
+  await persistPaymentEvent({ eventId, eventType, objectId: intent.id, orderId });
+  return eventId;
+}
+
+export async function prepareOrderPaymentReconciliation(orderId: string, userId: string) {
+  const { data: order, error } = await db().from('orders')
+    .select('id,stripe_payment_intent_id,payment_status')
+    .eq('id', orderId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw new AppError(500, 'ORDER_READ_FAILED', 'Não foi possível consultar o pedido.');
+  if (!order) throw new AppError(404, 'ORDER_NOT_FOUND', 'Pedido não encontrado.');
+  if (['succeeded', 'failed', 'canceled', 'refunded'].includes(order.payment_status) || !order.stripe_payment_intent_id) return null;
+
+  const intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
+  if (intent.metadata.orderId !== orderId) throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'O pagamento não pertence a este pedido.');
+  return persistIntentState(intent, 'on-demand-reconcile');
+}
+
+export async function expireOrderReservation(orderId: string): Promise<PaymentResult> {
+  const { data: reservation, error } = await db().from('inventory_reservations')
+    .select('expires_at')
+    .eq('order_id', orderId)
+    .eq('status', 'reserved')
+    .order('expires_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new AppError(500, 'RESERVATION_READ_FAILED', 'Não foi possível consultar a reserva.');
+  if (!reservation) return orderResult(orderId);
+  if (Date.parse(reservation.expires_at) > Date.now()) return orderResult(orderId);
+
+  const { data: order, error: orderError } = await db().from('orders').select('id,stripe_payment_intent_id').eq('id', orderId).maybeSingle();
+  if (orderError || !order) throw new AppError(500, 'ORDER_READ_FAILED', 'Não foi possível consultar o pedido reservado.');
+  if (!order.stripe_payment_intent_id) {
+    const { error: releaseError } = await db().rpc('release_order_reservation', { p_order_id: orderId, p_reason: 'expired' });
+    if (releaseError) throw releaseError;
+    return orderResult(orderId);
   }
+
+  let intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
+  if (intent.metadata.orderId !== orderId) throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'O pagamento não pertence à reserva.');
+  if (!['succeeded', 'canceled'].includes(intent.status)) {
+    try {
+      intent = await stripe().paymentIntents.cancel(intent.id);
+    } catch {
+      intent = await stripe().paymentIntents.retrieve(intent.id);
+      if (!['succeeded', 'canceled'].includes(intent.status)) throw new Error(`PaymentIntent ${intent.id} não pôde ser encerrado`);
+    }
+  }
+
+  const eventId = await persistIntentState(intent, 'reservation-expiry');
+  return processPaymentEvent(eventId);
 }

@@ -11,7 +11,7 @@ export const apiLimiter = rateLimit({
   limit: 180,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
-  skip: (req) => req.path.startsWith('/api/webhooks/') || req.path.startsWith('/api/jobs/'),
+  skip: (req) => req.path.startsWith('/api/webhooks/'),
   handler: (req, res) => res.status(429).json({ code: 'RATE_LIMITED', message: 'Muitas solicitações. Aguarde e tente novamente.', requestId: req.requestId }),
 });
 

@@ -7,5 +7,6 @@ describe('paymentStatus', () => {
     expect(paymentStatus('payment_intent.payment_failed', 'requires_payment_method')).toBe('failed');
     expect(paymentStatus('payment_intent.canceled', 'canceled')).toBe('canceled');
     expect(paymentStatus('charge.refunded', 'succeeded')).toBe('refunded');
+    expect(paymentStatus('reconcile.processing', 'processing')).toBe('processing');
   });
 });

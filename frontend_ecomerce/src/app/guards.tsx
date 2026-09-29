@@ -7,18 +7,18 @@ function LoadingSession() {
 }
 
 export function RequireAuth({ children }: { children: ReactNode }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
+
+export function RequireAdmin({ children }: { children: ReactNode }) {
+  return <ProtectedRoute admin>{children}</ProtectedRoute>;
+}
+
+function ProtectedRoute({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
   if (isLoading) return <LoadingSession />;
   if (!user) return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;
-  return children;
-}
-
-export function RequireAdmin({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
-  if (isLoading) return <LoadingSession />;
-  if (!user) return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
-  if (!user.isAdmin) return <Navigate to="/" replace />;
+  if (admin && !user.isAdmin) return <Navigate to="/" replace />;
   return children;
 }

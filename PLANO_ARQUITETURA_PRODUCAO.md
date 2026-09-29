@@ -195,7 +195,7 @@ Os códigos sem `SELECIONADA` explícita abaixo adotam a alternativa recomendada
 - [ ] **D24-A (parcial)** — CI, lint, typecheck, build, unitários e contrato implementados; ainda faltam integração real Postgres/Stripe fake e E2E de navegador/concorrência antes do go-live.
 - [x] **D25-C** — um único `create-database.sql` manual e reexecutável, conforme a escolha selecionada (mantém a limitação de não haver migrations incrementais).
 - [x] **D26-A** — refresh em cookie `HttpOnly/Secure/SameSite`; access token curto somente em memória e proteção por origem/CORS.
-- [x] **D27-A** — webhook só valida/persiste e responde 202; tabela funciona como fila durável e cron processa retry/dead-letter por tentativas.
+- [x] **D27-A** — webhook valida/persiste/publica e responde 202; Vercel Queues entrega ao consumidor com retry e as tabelas mantêm auditoria, idempotência e tentativas esgotadas.
 - [x] **D28-C** — `NUMERIC/DECIMAL` no banco convertido para `number`, conforme selecionado (Stripe recebe centavos arredondados).
 - [x] **D29-A** — `inventory_movements` imutável, motivos/atores e chaves idempotentes, atualizado na mesma função transacional.
 - [x] **D30-A** — outbox idempotente e envio assíncrono por Resend após pagamento pago.
