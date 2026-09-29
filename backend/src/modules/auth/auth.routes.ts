@@ -74,3 +74,19 @@ authRoutes.post('/password-reset/confirm', authLimiter, asyncHandler(async (req,
   await resetPassword(token, password);
   res.status(204).end();
 }));
+
+authRoutes.get([
+  '/login',
+  '/register',
+  '/refresh',
+  '/logout',
+  '/password-reset/request',
+  '/password-reset/confirm',
+], (req, res) => {
+  res.setHeader('Allow', 'POST, OPTIONS');
+  res.status(405).json({
+    code: 'METHOD_NOT_ALLOWED',
+    message: `A rota ${req.path} aceita somente POST.`,
+    requestId: req.requestId,
+  });
+});

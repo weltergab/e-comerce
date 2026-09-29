@@ -1,17 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { apiJson, setAccessToken } from '@/lib/api/client';
+import { setAccessToken } from '@/lib/api/client';
+import { loginAccount, logoutAccount, refreshSession, registerAccount } from '@/src/features/auth/api';
+import type { User } from '@/src/features/auth/types';
 
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  isAdmin: boolean;
-}
-
-interface SessionResponse {
-  accessToken: string;
-  user: User;
-}
+export type { User } from '@/src/features/auth/types';
 
 interface AuthContextType {
   user: User | null;
@@ -28,31 +20,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    apiJson<SessionResponse>('/api/auth/refresh', { method: 'POST' })
+    refreshSession()
       .then((session) => { setAccessToken(session.accessToken); setUser(session.user); })
       .catch(() => { setAccessToken(null); setUser(null); })
       .finally(() => setIsLoading(false));
   }, []);
 
-  const startSession = (session: SessionResponse) => {
+  const startSession = (session: { accessToken: string; user: User }) => {
     setAccessToken(session.accessToken);
     setUser(session.user);
   };
 
   const login = async (emailOrUsername: string, password: string) => {
-    startSession(await apiJson<SessionResponse>('/api/auth/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emailOrUsername, password }),
-    }));
+    startSession(await loginAccount(emailOrUsername, password));
   };
 
   const register = async (email: string, username: string, password: string) => {
-    startSession(await apiJson<SessionResponse>('/api/auth/register', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, username, password }),
-    }));
+    startSession(await registerAccount(email, username, password));
   };
 
   const logout = async () => {
-    await apiJson<unknown>('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    await logoutAccount().catch(() => undefined);
     setAccessToken(null);
     setUser(null);
   };

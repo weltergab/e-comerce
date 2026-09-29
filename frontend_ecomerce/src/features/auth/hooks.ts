@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { User } from '@/contexts/AuthContext';
+import type { User } from './types';
 
 export function useAuthRedirect(user: User | null) {
   const navigate = useNavigate();
