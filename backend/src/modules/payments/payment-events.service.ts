@@ -1,3 +1,4 @@
+import type Stripe from 'stripe';
 import { db } from '../../db/client';
 import { stripe } from '../../payments/stripe';
 import { Sentry } from '../../config/monitoring';
@@ -5,6 +6,9 @@ import { AppError } from '../../shared/errors';
 import { logger } from '../../shared/logger';
 
 export const supportedPaymentEvents = new Set([
+  'checkout.session.completed',
+  'checkout.session.async_payment_succeeded',
+  'checkout.session.async_payment_failed',
   'payment_intent.created',
   'payment_intent.processing',
   'payment_intent.succeeded',
@@ -28,11 +32,39 @@ interface PaymentResult {
 }
 
 export function paymentStatus(eventType: string, stripeStatus: string) {
+  if (eventType === 'checkout.session.async_payment_succeeded') return 'succeeded';
+  if (eventType === 'checkout.session.async_payment_failed') return 'failed';
   if (eventType === 'payment_intent.succeeded') return 'succeeded';
   if (eventType === 'payment_intent.payment_failed') return 'failed';
   if (eventType === 'payment_intent.canceled') return 'canceled';
   if (eventType === 'charge.refunded') return 'refunded';
   return stripeStatus;
+}
+
+function checkoutSessionOrderId(session: Stripe.Checkout.Session) {
+  return session.metadata?.orderId || session.client_reference_id || undefined;
+}
+
+async function paymentIntentFromSession(session: Stripe.Checkout.Session) {
+  if (!session.payment_intent) return null;
+  return typeof session.payment_intent === 'string'
+    ? stripe().paymentIntents.retrieve(session.payment_intent)
+    : session.payment_intent;
+}
+
+async function retrieveCheckoutSessionIntent(sessionId: string, orderId: string) {
+  const session = await stripe().checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] });
+  if (checkoutSessionOrderId(session) !== orderId) {
+    throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'A sessão de pagamento não pertence a este pedido.');
+  }
+  return { session, intent: await paymentIntentFromSession(session) };
+}
+
+async function associatePaymentIntent(orderId: string, paymentIntentId: string) {
+  const { error } = await db().from('orders')
+    .update({ stripe_payment_intent_id: paymentIntentId })
+    .eq('id', orderId);
+  if (error) throw new AppError(500, 'PAYMENT_ASSOCIATION_FAILED', 'Não foi possível associar o pagamento ao pedido.');
 }
 
 export async function persistPaymentEvent(input: PaymentEventInput) {
@@ -75,6 +107,7 @@ export async function processPaymentEvent(eventId: string): Promise<PaymentResul
     const intent = await stripe().paymentIntents.retrieve(event.object_id);
     const orderId = intent.metadata.orderId || event.order_id;
     if (!orderId) throw new Error('PaymentIntent sem orderId');
+    await associatePaymentIntent(orderId, intent.id);
     const method = typeof intent.payment_method === 'string'
       ? await stripe().paymentMethods.retrieve(intent.payment_method).then((value) => value.type).catch(() => null)
       : null;
@@ -122,7 +155,7 @@ function reconciliationEventType(status: string) {
   return `reconcile.${status}`;
 }
 
-async function persistIntentState(intent: Awaited<ReturnType<ReturnType<typeof stripe>['paymentIntents']['retrieve']>>, prefix: string) {
+async function persistIntentState(intent: Stripe.PaymentIntent, prefix: string) {
   const orderId = intent.metadata.orderId;
   if (!orderId) throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'O pagamento não está associado a um pedido.');
   const eventType = reconciliationEventType(intent.status);
@@ -133,16 +166,22 @@ async function persistIntentState(intent: Awaited<ReturnType<ReturnType<typeof s
 
 export async function prepareOrderPaymentReconciliation(orderId: string, userId: string) {
   const { data: order, error } = await db().from('orders')
-    .select('id,stripe_payment_intent_id,payment_status')
+    .select('id,stripe_checkout_session_id,stripe_payment_intent_id,payment_status')
     .eq('id', orderId)
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw new AppError(500, 'ORDER_READ_FAILED', 'Não foi possível consultar o pedido.');
   if (!order) throw new AppError(404, 'ORDER_NOT_FOUND', 'Pedido não encontrado.');
-  if (['succeeded', 'failed', 'canceled', 'refunded'].includes(order.payment_status) || !order.stripe_payment_intent_id) return null;
+  if (['succeeded', 'failed', 'canceled', 'refunded'].includes(order.payment_status)) return null;
 
-  const intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
+  const intent = order.stripe_checkout_session_id
+    ? (await retrieveCheckoutSessionIntent(order.stripe_checkout_session_id, orderId)).intent
+    : order.stripe_payment_intent_id
+      ? await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id)
+      : null;
+  if (!intent) return null;
   if (intent.metadata.orderId !== orderId) throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'O pagamento não pertence a este pedido.');
+  await associatePaymentIntent(orderId, intent.id);
   return persistIntentState(intent, 'on-demand-reconcile');
 }
 
@@ -158,16 +197,37 @@ export async function expireOrderReservation(orderId: string): Promise<PaymentRe
   if (!reservation) return orderResult(orderId);
   if (Date.parse(reservation.expires_at) > Date.now()) return orderResult(orderId);
 
-  const { data: order, error: orderError } = await db().from('orders').select('id,stripe_payment_intent_id').eq('id', orderId).maybeSingle();
+  const { data: order, error: orderError } = await db().from('orders')
+    .select('id,stripe_checkout_session_id,stripe_payment_intent_id')
+    .eq('id', orderId)
+    .maybeSingle();
   if (orderError || !order) throw new AppError(500, 'ORDER_READ_FAILED', 'Não foi possível consultar o pedido reservado.');
-  if (!order.stripe_payment_intent_id) {
+
+  let intent: Stripe.PaymentIntent | null = null;
+  if (order.stripe_checkout_session_id) {
+    let sessionState = await retrieveCheckoutSessionIntent(order.stripe_checkout_session_id, orderId);
+    if (sessionState.session.status === 'open') {
+      try {
+        const expired = await stripe().checkout.sessions.expire(sessionState.session.id);
+        sessionState = { session: expired, intent: await paymentIntentFromSession(expired) };
+      } catch {
+        sessionState = await retrieveCheckoutSessionIntent(order.stripe_checkout_session_id, orderId);
+        if (sessionState.session.status === 'open') throw new Error(`Checkout Session ${sessionState.session.id} não pôde ser encerrada`);
+      }
+    }
+    intent = sessionState.intent;
+  } else if (order.stripe_payment_intent_id) {
+    intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
+  }
+
+  if (!intent) {
     const { error: releaseError } = await db().rpc('release_order_reservation', { p_order_id: orderId, p_reason: 'expired' });
     if (releaseError) throw releaseError;
     return orderResult(orderId);
   }
 
-  let intent = await stripe().paymentIntents.retrieve(order.stripe_payment_intent_id);
   if (intent.metadata.orderId !== orderId) throw new AppError(409, 'PAYMENT_ORDER_MISMATCH', 'O pagamento não pertence à reserva.');
+  await associatePaymentIntent(orderId, intent.id);
   if (!['succeeded', 'canceled'].includes(intent.status)) {
     try {
       intent = await stripe().paymentIntents.cancel(intent.id);

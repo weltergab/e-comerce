@@ -8,7 +8,7 @@ const CHECKOUT_METHODS_CACHE_MS = 5 * 60_000;
 
 export function stripe() {
   if (!client) {
-    client = new Stripe(getEnv().stripeSecretKey, { apiVersion: '2025-10-29.clover' });
+    client = new Stripe(getEnv().stripeSecretKey, { apiVersion: '2026-08-26.dahlia' });
   }
   return client;
 }

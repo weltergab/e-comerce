@@ -1,8 +1,26 @@
 # Arquitetura do Storecy
 
-Este documento representa a arquitetura implementada no repositório. Os diagramas usam [Mermaid](https://mermaid.js.org/) e podem ser visualizados diretamente no GitHub, GitLab e em editores Markdown com suporte a Mermaid.
+Estado do código em **29/09/2026**. Este documento descreve somente a arquitetura presente no repositório; ações ainda necessárias estão identificadas como pendentes.
 
-## 1. Arquitetura do sistema
+## Legenda de status
+
+- [x] Implementado no código e versionado no repositório.
+- [ ] Não implementado, não aplicado no ambiente remoto ou ainda não validado de ponta a ponta.
+
+## 1. Visão geral
+
+### Estado dos componentes
+
+- [x] SPA em React 19, TypeScript e Vite, publicada como conteúdo estático na Vercel.
+- [x] Backend Express 5 modular, exposto por uma Serverless Function da Vercel em `/api/*`.
+- [x] PostgreSQL do Supabase como fonte oficial de catálogo, estoque, pedidos, sessões e eventos.
+- [x] Supabase Storage para imagens públicas de produtos, normalizadas em WebP pelo backend.
+- [x] Stripe Checkout Sessions em página hospedada para cartão e, quando habilitado na conta, Pix.
+- [x] Webhook Stripe assinado, com persistência do evento antes do processamento assíncrono.
+- [x] Vercel Queues para tarefas duráveis, adiadas, idempotentes e com retry; não há cron de aplicação.
+- [x] Resend para recuperação de senha e confirmação de pagamento.
+- [x] Sentry no backend e no frontend, além de logs JSON com `requestId` no backend.
+- [ ] Infraestrutura externa e fluxo completo validados no ambiente de produção após a aplicação das migrations e variáveis descritas em `PLANO_ARQUITETURA_PRODUCAO.md`.
 
 ```mermaid
 flowchart LR
@@ -13,322 +31,289 @@ flowchart LR
         Guards["RequireAuth / RequireAdmin"]
         State["Auth, carrinho e tema"]
         Query["TanStack Query"]
-        ApiClient["API client central<br/>access token em memória"]
-        StripeJS["Stripe.js<br/>Payment Element"]
+        ApiClient["Cliente HTTP central<br/>access token em memória"]
 
         UI --> Guards
         UI --> State
         UI --> Query
         Query --> ApiClient
         State --> ApiClient
-        UI --> StripeJS
     end
 
-    subgraph Hosting["Vercel"]
-        Static["Aplicação estática / SPA"]
-        Function["Serverless Function<br/>/api/*"]
-        Queue["Vercel Queues<br/>entrega durável e retry"]
+    subgraph Vercel["Vercel"]
+        Static["SPA estática"]
+        Api["Serverless Function<br/>/api/*"]
+        Queue["Vercel Queues<br/>storecy-tasks"]
+        Consumer["Consumidor privado<br/>api/tasks.ts"]
     end
 
     subgraph Backend["Backend Express modular"]
-        Middleware["CORS, Helmet, rate limit,<br/>requestId, timeout e erros"]
+        Middleware["CORS, Helmet, limites,<br/>requestId e erros"]
         Routes["Auth · Catálogo · Checkout<br/>Pedidos · Admin · Conteúdo"]
         Webhook["Webhook Stripe<br/>body bruto + assinatura"]
-        Tasks["Consumidor privado<br/>de tarefas por domínio"]
         Services["Serviços e regras de negócio"]
-
-        Middleware --> Routes
-        Routes --> Services
-        Webhook --> Services
-        Tasks --> Services
     end
 
-    subgraph Data["Supabase"]
+    subgraph Supabase["Supabase"]
         Postgres[("PostgreSQL<br/>fonte oficial")]
-        Storage[("Storage<br/>imagens WebP")]
+        Storage[("Storage<br/>product-images")]
     end
 
-    subgraph Providers["Serviços externos"]
-        Stripe["Stripe<br/>PaymentIntent e catálogo"]
-        Resend["Resend<br/>e-mails"]
-        Sentry["Sentry<br/>erros e observabilidade"]
-    end
+    Stripe["Stripe<br/>Checkout, pagamentos e catálogo"]
+    Resend["Resend<br/>e-mails"]
+    Sentry["Sentry<br/>observabilidade"]
 
-    User --> Static
-    Static --> UI
-    ApiClient -->|"HTTPS + cookie HttpOnly"| Function
-    Function --> Middleware
-    Function --> Webhook
-    Services -->|"publica tarefa idempotente"| Queue
-    Queue -->|"push privado"| Tasks
-
-    Services -->|"service role / RPC"| Postgres
+    User --> Static --> UI
+    ApiClient -->|"HTTPS + cookie HttpOnly"| Api
+    Api --> Middleware --> Routes --> Services
+    Api --> Webhook --> Services
+    Services -->|"service role e RPCs"| Postgres
     Services -->|"upload e limpeza"| Storage
-    Services -->|"cria e consulta PaymentIntent"| Stripe
-    StripeJS -->|"confirma pagamento"| Stripe
+    Services -->|"cria Checkout Session"| Stripe
+    UI -->|"redirecionamento"| Stripe
     Stripe -->|"eventos assinados"| Webhook
-    Webhook -->|"persiste, publica e responde 202"| Postgres
-    Tasks -->|"consome stripe_events"| Postgres
-    Tasks -->|"reconcilia um pedido"| Stripe
-    Tasks -->|"envia outbox"| Resend
-    Middleware -.->|"falhas e contexto"| Sentry
-    Services -.->|"falhas e contexto"| Sentry
+    Services -->|"publica tarefa"| Queue
+    Queue --> Consumer --> Services
+    Consumer --> Resend
+    Middleware -.-> Sentry
+    Services -.-> Sentry
 ```
 
-### Fluxos principais
+### Limites de responsabilidade
 
-1. O frontend nunca envia preço confiável: envia apenas produto e quantidade; o backend lê preço, moeda e estoque no Postgres.
-2. O checkout cria o pedido e reserva o estoque atomicamente antes de criar o `PaymentIntent` no Stripe.
-3. O webhook valida e persiste o evento antes de publicar uma tarefa. O consumidor atualiza pagamento, pedido, reserva, ledger e outbox de e-mail de forma idempotente.
-4. A página de sucesso consulta o estado real e pode solicitar uma reconciliação pontual e autenticada do próprio pedido.
-5. Checkout, upload e encerramento de pedido publicam tarefas adiadas para expiração de reserva, limpeza de imagem, retenção de credenciais e anonimização de PII.
+- [x] O navegador acessa dados de negócio exclusivamente pela API; não usa o cliente Supabase nem possui credencial de banco.
+- [x] O backend é a fronteira de confiança para autenticação, preço, disponibilidade, autorização administrativa e transições de estado.
+- [x] O Postgres executa, por RPCs transacionais, as mudanças críticas de pedido e estoque.
+- [x] O Stripe decide o resultado financeiro; a aplicação o incorpora por webhook ou reconciliação pontual.
+- [x] A fila executa efeitos posteriores e tarefas adiadas sem varreduras periódicas globais.
 
-## 2. Arquitetura do banco de dados
+## 2. Frontend
+
+### Funcionalidades implementadas
+
+- [x] Catálogo, detalhe de produto, carrinho persistido localmente e tema.
+- [x] Cadastro, login, logout, restauração da sessão e recuperação de senha.
+- [x] Access token mantido somente em memória e refresh token em cookie `HttpOnly` enviado com `credentials: include`.
+- [x] Cliente HTTP único em `lib/api/client.ts`, com uma tentativa coordenada de refresh após `401`.
+- [x] Rotas protegidas para checkout, pedidos do cliente e administração.
+- [x] Formulário de endereço com criação de chave de idempotência por carrinho.
+- [x] Redirecionamento para a URL da Checkout Session retornada pelo backend.
+- [x] Página de sucesso que solicita reconciliação pontual e consulta o status a cada 2,5 segundos, parando em estado terminal ou após 20 respostas/tentativas.
+- [x] Área administrativa para catálogo, imagens, conteúdo da introdução, pedidos, notas e fulfillment.
+- [x] TanStack Query como camada de cache e estado de requisições.
+- [x] Captura de erros pelo Sentry quando `VITE_SENTRY_DSN` está configurado.
+
+### O que não existe no frontend
+
+- [x] Não há Payment Element, `Elements`, Stripe.js ou `client_secret` no código executável.
+- [x] Não há confirmação de pagamento no navegador; o frontend apenas redireciona para o checkout hospedado.
+- [x] Não há preço, total ou estoque enviados como fonte confiável ao backend.
+- [x] Não há acesso direto do browser ao Supabase.
+
+## 3. Backend e API
+
+### Superfície HTTP atual
+
+| Grupo | Rotas | Status |
+|---|---|---|
+| Saúde | `GET /api/health` | [x] |
+| Autenticação | `POST /api/auth/login`, `register`, `refresh`, `logout`, `password-reset/request`, `password-reset/confirm`; `GET /api/auth/me` | [x] |
+| Catálogo público | `GET /api/products`, `GET /api/products/:id` | [x] |
+| Checkout | `POST /api/checkout` | [x] |
+| Pedidos do cliente | `GET /api/orders`, `GET /api/orders/:id/status`, `POST /api/orders/:id/payment-reconciliation` | [x] |
+| Conteúdo público | `GET /api/parameters/introduction-header` | [x] |
+| Webhook | `POST /api/webhooks/stripe` | [x] |
+| Operação administrativa | `GET /api/admin/health`, `GET /api/admin/metrics` | [x] |
+| Catálogo administrativo | CRUD lógico em `/api/admin/products` e upload em `/api/admin/uploads/product-images` | [x] |
+| Pedidos administrativos | listagem, notas e fulfillment em `/api/admin/orders` | [x] |
+| Estoque administrativo | devolução manual em `/api/admin/inventory/:productId/return` | [x] |
+| Conteúdo administrativo | leitura e atualização de `/api/admin/parameters/introduction-header` | [x] |
+
+### Segurança de transporte e aplicação
+
+- [x] CORS por allowlist, com credenciais e tratamento explícito de preflight.
+- [x] Helmet, remoção de `x-powered-by`, limite JSON de 256 KiB e timeout de 15 segundos.
+- [x] Rate limit geral, mais limites específicos para autenticação e checkout.
+- [x] Erros com formato estável (`code`, `message`, `requestId` e, quando aplicável, `fieldErrors`).
+- [x] Logs estruturados e redação de chaves sensíveis conhecidas.
+- [x] Senhas com bcrypt, JWT de curta duração, rotação de refresh token por família e detecção de replay.
+- [x] Cookie de refresh `HttpOnly`, `SameSite=Lax`, limitado a `/api/auth` e `Secure` em produção.
+- [x] Autorização administrativa revalidada no banco por `is_admin`.
+- [x] Validação estrita de checkout, endereço, paginação, produtos e origens de imagem.
+
+## 4. Checkout, pagamento e estoque
+
+### Fluxo principal
+
+```mermaid
+sequenceDiagram
+    actor C as Cliente
+    participant F as Frontend
+    participant A as API
+    participant D as Postgres
+    participant S as Stripe
+    participant Q as Vercel Queue
+
+    C->>F: Confirma endereço e carrinho
+    F->>A: POST /api/checkout<br/>itens + endereço + Idempotency-Key
+    A->>D: Lê produtos, preços e moeda
+    A->>D: create_checkout_order(...)
+    D-->>A: Pedido + snapshot + reserva atômica
+    A->>S: Cria Checkout Session hospedada
+    S-->>A: session.id + session.url
+    A->>D: Salva stripe_checkout_session_id
+    A->>Q: Agenda reservation-expiry
+    A-->>F: orderId + checkoutUrl
+    F->>S: Redireciona o navegador
+    S-->>C: Coleta e confirma o pagamento
+    S->>A: POST /api/webhooks/stripe
+    A->>D: Persiste stripe_events
+    A->>Q: Publica payment-event
+    A-->>S: 202 Accepted
+    Q->>A: Entrega a tarefa privada
+    A->>S: Consulta o PaymentIntent
+    A->>D: apply_payment_state(...)
+    D-->>A: Pedido, estoque, reserva e outbox atualizados
+    A->>Q: Agenda e-mail e verificações posteriores
+    S-->>F: Redireciona para /checkout/success
+    F->>A: Reconciliação pontual + consulta de status
+```
+
+### Garantias implementadas
+
+- [x] O backend recalcula o total com preço e moeda do Postgres.
+- [x] `Idempotency-Key` é único por usuário e reaproveita um checkout compatível.
+- [x] `create_checkout_order` usa lock, valida saldo, cria snapshots e reserva estoque na mesma transação.
+- [x] A reserva dura 15 minutos; a Checkout Session tem expiração de segurança de 30 minutos e é encerrada pela tarefa de reserva quando necessário.
+- [x] Falha ao criar, associar ou agendar a sessão executa compensação: expira a sessão quando possível e libera a reserva.
+- [x] Eventos Stripe são deduplicados por `event_id` e processados de forma assíncrona.
+- [x] Estados financeiros terminais não são rebaixados por eventos atrasados.
+- [x] Pagamento aprovado converte reserva em venda, reduz `on_hand` e cria a notificação de e-mail na mesma transação.
+- [x] Falha, cancelamento ou expiração libera a reserva.
+- [x] Reembolso não devolve estoque automaticamente; a devolução física exige movimento administrativo explícito.
+- [x] O histórico de estoque é preservado em `inventory_movements` com chave idempotente.
+- [x] Cartão está sempre disponível; Pix só é anunciado quando disponível na configuração de pagamento padrão da conta Stripe.
+- [x] Boleto não faz parte dos meios de pagamento atuais.
+
+## 5. Processamento assíncrono sem cron
+
+Todas as tarefas usam o tópico `storecy-tasks`. Tarefas com prazo superior ao limite de atraso da fila avançam em etapas até `notBefore`; em desenvolvimento, existe um executor local com retry.
+
+| Tarefa | Gatilho | Responsabilidade | Status |
+|---|---|---|---|
+| `payment-event` | Webhook ou reconciliação do pedido | Consultar o Stripe e aplicar o estado financeiro | [x] |
+| `email-delivery` | Pagamento aprovado | Entregar a outbox `order_paid` via Resend | [x] |
+| `reservation-expiry` | Criação do checkout ou sessão expirada | Encerrar sessão/intenção e liberar reserva vencida | [x] |
+| `product-image-cleanup` | Upload ou remoção de vínculo | Apagar imagem órfã após um dia | [x] |
+| `order-fulfillment-check` | Pagamento aprovado | Alertar se o pedido continuar `paid` após 30 minutos | [x] |
+| `order-pii-redaction` | Pagamento terminal processado ou entrega concluída | Anonimizar PII após `PII_RETENTION_DAYS` | [x] |
+| `refresh-token-cleanup` | Emissão ou revogação | Excluir credencial após o prazo de retenção | [x] |
+| `password-reset-token-cleanup` | Solicitação de reset | Excluir token expirado após a retenção | [x] |
+
+- [x] Publicação com chave de idempotência derivada do payload.
+- [x] Retry exponencial limitado e alerta no Sentry ao esgotar tentativas relevantes.
+- [x] Script `tasks:backfill` para publicar tarefas de registros criados antes da migração para filas.
+- [x] Não existe rota HTTP pública para disparar manutenção em lote.
+- [x] Não existe configuração de cron no projeto.
+- [ ] O caminho compensatório de falha durante a criação da Checkout Session ainda deve agendar a anonimização do pedido cancelado sem depender de backfill.
+
+## 6. Persistência
 
 ```mermaid
 erDiagram
-    USERS {
-        uuid id PK
-        varchar email UK
-        varchar username UK
-        text password_hash
-        boolean is_admin
-        timestamptz created_at
-        timestamptz updated_at
-    }
+    USERS ||--o{ REFRESH_TOKENS : possui
+    USERS ||--o{ PASSWORD_RESET_TOKENS : solicita
+    USERS o|--o{ ORDERS : realiza
+    USERS o|--o{ INVENTORY_MOVEMENTS : executa
+    USERS o|--o{ PRODUCT_IMAGES : envia
 
-    PRODUCTS {
-        text id PK
-        varchar name
-        numeric price
-        varchar currency
-        varchar category
-        jsonb images
-        boolean active
-        text stripe_product_id UK
-        text stripe_price_id UK
-    }
+    PRODUCTS ||--|| INVENTORY : possui
+    PRODUCTS ||--o{ ORDER_ITEMS : snapshot
+    PRODUCTS ||--o{ INVENTORY_RESERVATIONS : reservado
+    PRODUCTS ||--o{ INVENTORY_MOVEMENTS : movimenta
+    PRODUCTS o|--o{ PRODUCT_IMAGES : usa
 
-    INVENTORY {
-        text product_id PK,FK
-        integer on_hand
-        integer reserved
-        integer version
-        timestamptz updated_at
-    }
-
-    ORDERS {
-        uuid id PK
-        uuid user_id FK
-        varchar user_email
-        varchar order_status
-        varchar payment_status
-        numeric amount
-        varchar currency
-        text stripe_payment_intent_id UK
-        text idempotency_key
-        jsonb shipping_address
-        text tracking_code
-    }
-
-    ORDER_ITEMS {
-        uuid id PK
-        uuid order_id FK
-        text product_id FK
-        varchar product_name
-        numeric unit_price
-        varchar currency
-        integer quantity
-        text image_url
-    }
-
-    INVENTORY_RESERVATIONS {
-        uuid order_id PK,FK
-        text product_id PK,FK
-        integer quantity
-        varchar status
-        timestamptz expires_at
-    }
-
-    INVENTORY_MOVEMENTS {
-        uuid id PK
-        text product_id FK
-        uuid order_id FK
-        varchar movement_type
-        integer quantity
-        uuid actor_id FK
-        text idempotency_key UK
-        timestamptz created_at
-    }
-
-    STRIPE_EVENTS {
-        text event_id PK
-        text event_type
-        text object_id
-        uuid order_id FK
-        varchar processing_status
-        integer attempt_count
-        timestamptz received_at
-        timestamptz processed_at
-    }
-
-    REFRESH_TOKENS {
-        uuid id PK
-        uuid user_id FK
-        text token_hash UK
-        uuid family_id
-        timestamptz expires_at
-        timestamptz revoked_at
-    }
-
-    PASSWORD_RESET_TOKENS {
-        uuid id PK
-        uuid user_id FK
-        text token_hash UK
-        timestamptz expires_at
-        timestamptz used_at
-    }
-
-    EMAIL_NOTIFICATIONS {
-        uuid id PK
-        uuid order_id FK
-        varchar template
-        varchar recipient
-        varchar status
-        integer attempt_count
-        text provider_message_id
-    }
-
-    PRODUCT_IMAGES {
-        text storage_path PK
-        text public_url UK
-        text product_id FK
-        uuid uploaded_by FK
-        varchar status
-        timestamptz created_at
-    }
-
-    PARAMETERS {
-        text key PK
-        jsonb value
-        text description
-        timestamptz updated_at
-    }
-
-    USERS o|--o{ ORDERS : "realiza"
-    USERS ||--o{ REFRESH_TOKENS : "possui"
-    USERS ||--o{ PASSWORD_RESET_TOKENS : "solicita"
-    USERS o|--o{ INVENTORY_MOVEMENTS : "executa"
-    USERS o|--o{ PRODUCT_IMAGES : "envia"
-
-    PRODUCTS ||--|| INVENTORY : "possui saldo"
-    PRODUCTS ||--o{ ORDER_ITEMS : "é congelado em"
-    PRODUCTS ||--o{ INVENTORY_RESERVATIONS : "é reservado em"
-    PRODUCTS ||--o{ INVENTORY_MOVEMENTS : "gera movimentos"
-    PRODUCTS o|--o{ PRODUCT_IMAGES : "possui"
-
-    ORDERS ||--|{ ORDER_ITEMS : "contém"
-    ORDERS ||--o{ INVENTORY_RESERVATIONS : "reserva"
-    ORDERS o|--o{ INVENTORY_MOVEMENTS : "origina"
-    ORDERS ||--o{ EMAIL_NOTIFICATIONS : "gera"
-    ORDERS o|--o{ STRIPE_EVENTS : "é conciliado por"
+    ORDERS ||--|{ ORDER_ITEMS : contém
+    ORDERS ||--o{ INVENTORY_RESERVATIONS : reserva
+    ORDERS o|--o{ INVENTORY_MOVEMENTS : origina
+    ORDERS ||--o{ EMAIL_NOTIFICATIONS : gera
+    ORDERS o|--o{ STRIPE_EVENTS : concilia
 ```
 
-`STRIPE_EVENTS.object_id` referencia logicamente objetos Stripe e `order_id` mantém a associação auditável com o pedido. `PARAMETERS` é independente. As alterações críticas de pedido e estoque são feitas pelas funções transacionais do arquivo `backend/database/create-database.sql`.
+### Grupos de dados
 
-### Grupos de responsabilidade do banco
+| Grupo | Tabelas | Responsabilidade | Status |
+|---|---|---|---|
+| Identidade | `users`, `refresh_tokens`, `password_reset_tokens` | Conta, sessão, revogação e recuperação | [x] |
+| Catálogo | `products`, `product_images`, `parameters` | Produto oficial, mídia e conteúdo configurável | [x] |
+| Pedidos | `orders`, `order_items`, `email_notifications` | Snapshot, pagamento, fulfillment e outbox | [x] |
+| Estoque | `inventory`, `inventory_reservations`, `inventory_movements` | Saldo físico, reserva e ledger | [x] |
+| Pagamentos | `stripe_events` e identificadores Stripe em `orders` | Auditoria, deduplicação e conciliação | [x] |
 
-| Grupo | Tabelas | Responsabilidade |
-|---|---|---|
-| Identidade | `users`, `refresh_tokens`, `password_reset_tokens` | Autenticação, renovação, revogação e recuperação de senha |
-| Catálogo | `products`, `product_images`, `parameters` | Produtos oficiais, imagens e conteúdo configurável |
-| Pedidos | `orders`, `order_items`, `email_notifications` | Snapshot da compra, fulfillment e outbox de e-mail |
-| Estoque | `inventory`, `inventory_reservations`, `inventory_movements` | Saldo, reservas temporárias e ledger auditável |
-| Pagamentos | `stripe_events` e campos Stripe em `orders` | Auditoria, idempotência e estado de pagamento |
+### Funções transacionais
 
-## 3. Arquitetura de pastas e grupos de pastas
+- [x] `create_checkout_order`: cria pedido, itens, reservas e movimentos de reserva.
+- [x] `release_order_reservation`: libera saldo reservado e encerra o pedido quando aplicável.
+- [x] `apply_payment_state`: aplica transições financeiras e seus efeitos de estoque/outbox.
+- [x] `admin_adjust_inventory`: ajusta saldo sem violar reservas.
+- [x] `manual_return_inventory`: devolve fisicamente itens com auditoria.
+- [x] `update_order_fulfillment`: impõe `paid -> packing -> shipped -> delivered`.
+- [x] `redact_order_pii`: anonimiza pedidos terminais após a retenção.
 
-```mermaid
-flowchart TB
-    Root["ecomerceReact2/"]
+### Modelo de acesso
 
-    subgraph RootDocs["Documentação e operação"]
-        Readme["README.md"]
-        Architecture["ARQUITETURA.md"]
-        Plan["PLANO_ARQUITETURA_PRODUCAO.md"]
-        Security["SECURITY.md"]
-        Github[".github/<br/>CI e Dependabot"]
-    end
+- [x] Papéis `anon` e `authenticated` não têm acesso às tabelas privadas nem às RPCs críticas.
+- [x] O backend usa `SUPABASE_SECRET_KEY`, que deve representar a credencial secreta/service role.
+- [x] RLS fica desabilitado nas tabelas privadas porque elas não são uma API para o navegador; o isolamento é feito pela API e pela revogação de privilégios públicos.
+- [x] O bucket `product-images` permite leitura pública; escrita e remoção passam pelo backend.
+- [x] `transactions`, quando presente em banco legado, é renomeada para `transactions_legacy` e não participa do fluxo atual.
+- [x] A migration `20260929_checkout_sessions.sql` adiciona o identificador único da Checkout Session a bancos existentes.
+- [ ] A aplicação das migrations no banco remoto deve ser confirmada por ambiente.
 
-    subgraph BackendTree["backend/"]
-        BEntry["api/ + server/<br/>HTTP, consumidor e entrada local"]
-        BSrc["src/"]
-        BBackground["background/<br/>contratos, publicação e consumo"]
-        BConfig["config/<br/>env, CORS, segurança, Sentry"]
-        BDb["db/<br/>cliente Postgres/Supabase"]
-        BModules["modules/<br/>módulos de negócio"]
-        BPayments["payments/<br/>cliente Stripe"]
-        BShared["shared/<br/>erros, HTTP e logs"]
-        BDatabase["database/<br/>schema SQL autoritativo"]
-        BScripts["scripts/<br/>importação do catálogo"]
-        BTests["tests/<br/>unitários e contratos"]
+## 7. Organização do repositório
 
-        BSrc --> BConfig
-        BSrc --> BBackground
-        BSrc --> BDb
-        BSrc --> BModules
-        BSrc --> BPayments
-        BSrc --> BShared
-        BEntry --> BSrc
-    end
-
-    subgraph Modules["backend/src/modules/"]
-        MAuth["auth/"]
-        MCatalog["catalog/"]
-        MCheckout["checkout/"]
-        MOrders["orders/"]
-        MPayments["payments/"]
-        MWebhooks["webhooks/"]
-        MContent["content/"]
-        MAdmin["admin/"]
-    end
-
-    subgraph FrontendTree["frontend_ecomerce/"]
-        FSrc["src/"]
-        FApp["app/<br/>guards de rota"]
-        FPages["pages/<br/>telas e rotas"]
-        FFeatures["features/<br/>API e hooks por domínio"]
-        FComponents["components/<br/>UI, layout, produto, pedido,<br/>checkout e admin"]
-        FContexts["contexts/<br/>auth, carrinho e tema"]
-        FLib["lib/<br/>API client, Stripe, tema e formatadores"]
-        FTypes["types/<br/>contratos do frontend"]
-
-        FSrc --> FApp
-        FSrc --> FPages
-        FSrc --> FFeatures
-        FSrc --> FComponents
-        FSrc --> FContexts
-        FSrc --> FLib
-        FSrc --> FTypes
-    end
-
-    Root --> RootDocs
-    Root --> BackendTree
-    Root --> FrontendTree
-    BModules --> Modules
-    BModules -.-> BDb
-    BModules -.-> BPayments
-    BModules -.-> BShared
-    FPages -.-> FFeatures
-    FPages -.-> FComponents
-    FFeatures -.-> FLib
-    FContexts -.-> FLib
+```text
+ecomerceReact2/
+├── .github/                         # CI e Dependabot
+├── backend/
+│   ├── api/                         # Entradas Vercel: HTTP e consumidor da fila
+│   ├── database/                    # Schema autoritativo e migrations incrementais
+│   ├── scripts/                     # Importação, backfill e validação de deploy
+│   ├── server/                      # Entrada HTTP local
+│   ├── src/
+│   │   ├── background/              # Contratos, publicação e consumo de tarefas
+│   │   ├── config/                  # Env, CORS, segurança e Sentry
+│   │   ├── db/                      # Cliente Supabase do servidor
+│   │   ├── modules/                 # Auth, catálogo, checkout, pedidos etc.
+│   │   ├── payments/                # Cliente e configuração Stripe
+│   │   └── shared/                  # Erros, HTTP e logs
+│   └── tests/                       # Testes unitários e de contrato
+└── frontend_ecomerce/
+    ├── components/                  # UI compartilhada por domínio
+    ├── contexts/                    # Auth, carrinho e tema
+    ├── lib/                         # Cliente HTTP, tema e formatação
+    ├── src/
+    │   ├── app/                     # Guards de rota
+    │   ├── features/                # APIs e hooks por domínio
+    │   └── pages/                   # Telas e rotas
+    └── types/                       # Contratos compartilhados do frontend
 ```
 
-### Regra de dependência
+### Regras de dependência
 
-- As entradas do backend carregam `src/app.ts`; as rotas delegam regras aos serviços dos módulos.
-- Os módulos podem usar `db`, `payments` e `shared`; esses blocos não dependem das rotas.
-- As páginas do frontend compõem componentes e hooks de domínio; o acesso HTTP passa pelo cliente central em `lib/api/client.ts`.
-- Componentes compartilhados não devem importar páginas. Tipos e formatadores ficam fora das telas para evitar duplicação.
+- [x] `api/index.ts` e `server/local.ts` carregam a mesma aplicação em `src/app.ts`.
+- [x] Rotas fazem parsing/autorização e delegam regras a serviços de domínio.
+- [x] Serviços podem depender de `db`, `payments`, `background` e `shared`; esses blocos não dependem das telas.
+- [x] No frontend, páginas compõem hooks e componentes; todo HTTP passa por `lib/api/client.ts`.
+- [x] Funções repetidas de estado financeiro, fila, API, formatação e UI foram centralizadas em módulos reutilizáveis.
 
+## 8. Qualidade e observabilidade
+
+- [x] Backend com compilação TypeScript, testes Vitest e validação do contrato de deploy Vercel.
+- [x] Frontend com ESLint, testes Vitest, typecheck e build Vite.
+- [x] CI executa instalação reprodutível, auditoria de dependências e `npm run check` nos dois projetos.
+- [x] Dependabot agrupa atualizações semanais separadas para backend e frontend.
+- [x] Métricas administrativas para eventos Stripe falhos, estoque negativo, fulfillment parado, e-mails falhos e divergência de catálogo.
+- [x] Health check administrativo valida banco e Stripe.
+- [ ] Testes de integração com banco real isolado, testes E2E no navegador e testes de concorrência ainda precisam ser adicionados.
+- [ ] Alertas, dashboards e procedimentos de recuperação precisam ser validados no ambiente de produção.

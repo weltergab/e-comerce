@@ -34,7 +34,7 @@ export interface CheckoutRequest {
 }
 
 export interface CheckoutResponse {
-  clientSecret: string;
+  checkoutUrl: string;
   orderId: string;
   amount: number;
   currency: string;
@@ -51,6 +51,7 @@ export interface OrderProduct {
 
 export interface Order {
   id: string;
+  stripeCheckoutSessionId?: string | null;
   stripePaymentIntentId: string | null;
   amount: number;
   currency: string;

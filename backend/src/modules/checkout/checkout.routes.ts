@@ -7,8 +7,7 @@ import { createCheckout } from './checkout.service';
 
 export const checkoutRoutes = Router();
 
-// /payment-intent permanece como alias temporário do contrato canônico /.
-checkoutRoutes.post(['/', '/payment-intent'], checkoutLimiter, requireAuth, asyncHandler(async (req, res) => {
+checkoutRoutes.post('/', checkoutLimiter, requireAuth, asyncHandler(async (req, res) => {
   const input = parseCheckout(req.body);
   const idempotencyKey = parseIdempotencyKey(req.header('idempotency-key'));
   const result = await createCheckout({ user: req.auth!, ...input, idempotencyKey });

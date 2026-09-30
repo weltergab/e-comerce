@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   payment_method varchar(40),
   amount numeric(12,2) NOT NULL CHECK (amount >= 0),
   currency varchar(3) NOT NULL DEFAULT 'brl',
+  stripe_checkout_session_id text UNIQUE,
   stripe_payment_intent_id text UNIQUE,
   idempotency_key text NOT NULL,
   shipping_address jsonb NOT NULL,
@@ -77,9 +78,13 @@ CREATE TABLE IF NOT EXISTS public.orders (
   UNIQUE (user_id, idempotency_key)
 );
 ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS stripe_checkout_session_id text,
   ADD COLUMN IF NOT EXISTS tracking_code text,
   ADD COLUMN IF NOT EXISTS shipped_at timestamptz,
   ADD COLUMN IF NOT EXISTS delivered_at timestamptz;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_stripe_checkout_session
+  ON public.orders(stripe_checkout_session_id)
+  WHERE stripe_checkout_session_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS public.order_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
