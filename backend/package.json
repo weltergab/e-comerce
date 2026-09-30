@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@sentry/node": "^11.0.0",
-    "@supabase/supabase-js": "^2.81.1",
+    "@supabase/supabase-js": "^2.117.2",
     "@vercel/queue": "^0.7.0",
     "bcryptjs": "^3.0.3",
-    "dotenv": "^17.2.3",
+    "dotenv": "^18.0.4",
     "express": "^5.1.0",
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
@@ -29,10 +29,10 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
-    "@types/node": "^20",
-    "tsx": "^4.20.6",
-    "typescript": "5.9.3",
-    "vitest": "3.2.7"
+    "@types/node": "^26",
+    "tsx": "^4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
   },
   "overrides": {
     "qs": "^6.16.0"
