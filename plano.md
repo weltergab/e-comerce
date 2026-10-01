@@ -20,6 +20,7 @@ Marcar um item como implementado significa que o comportamento existe no código
 - [x] O banco e o Storage só são acessados pelo backend, exceto pela leitura pública das imagens.
 - [x] Variáveis sensíveis ficam no servidor; o frontend expõe somente variáveis `VITE_*` não secretas.
 - [x] O schema SQL autoritativo é reexecutável e migrations incrementais atendem bancos existentes.
+- [x] Migration incremental `20260930_stripe_event_order_id.sql` alinha eventos a pedidos; o backend mantém compatibilidade temporária com o schema anterior.
 - [ ] Root Directory e comandos de build dos dois projetos confirmados nos respectivos projetos Vercel.
 - [ ] Ambientes de preview, staging e produção isolados por banco, Stripe e secrets.
 
@@ -158,6 +159,7 @@ Estes itens são bloqueadores operacionais mesmo quando o código correspondente
 - [ ] Aplicar `backend/database/create-database.sql` em um banco novo; em banco já existente, revisar o baseline e aplicar as migrations incrementais necessárias.
 - [ ] Aplicar `backend/database/20260928_service_role_privileges.sql` se os privilégios da service role ainda não estiverem garantidos.
 - [ ] Aplicar `backend/database/20260929_checkout_sessions.sql` antes de publicar o backend com Checkout Sessions.
+- [ ] Aplicar `backend/database/20260930_stripe_event_order_id.sql` para persistir a associação entre eventos Stripe e pedidos.
 - [ ] Confirmar em `public.orders` a coluna e o índice único de `stripe_checkout_session_id`.
 - [ ] Confirmar que a credencial em `SUPABASE_SECRET_KEY` é a chave secreta/service role do projeto correto, nunca uma chave publicável.
 - [ ] Configurar `JWT_SECRET` e `JWT_REFRESH_SECRET` distintos, aleatórios e com pelo menos 32 caracteres.

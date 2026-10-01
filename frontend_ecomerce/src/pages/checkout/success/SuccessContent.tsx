@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -9,11 +10,13 @@ import { useOrderStatus } from '@/src/features/orders/hooks';
 
 export default function SuccessContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const { completeOrder } = useCart();
   const orderId = searchParams.get('order_id');
   const cartUpdated = useRef(false);
   const orderStatus = useOrderStatus(orderId);
+  const paymentStatus = orderStatus.data?.order.paymentStatus;
 
   useEffect(() => {
     if (orderId) void requestPaymentReconciliation(orderId).catch(() => undefined);
@@ -34,7 +37,12 @@ export default function SuccessContent() {
     }
   }, [completeOrder, orderId, orderStatus.data]);
 
-  const status = orderStatus.data?.order.paymentStatus || 'processing';
+  useEffect(() => {
+    if (paymentStatus !== 'succeeded') return;
+    void queryClient.invalidateQueries({ queryKey: ['orders', 'mine'] });
+  }, [paymentStatus, queryClient]);
+
+  const status = paymentStatus || 'processing';
   const error = !orderId
     ? 'Pedido não informado.'
     : orderStatus.error instanceof Error

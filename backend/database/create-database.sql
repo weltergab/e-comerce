@@ -194,6 +194,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_order_movement
   ON public.inventory_movements(order_id, product_id, movement_type)
   WHERE order_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_events_queue ON public.stripe_events(processing_status, received_at);
+CREATE INDEX IF NOT EXISTS idx_stripe_events_order ON public.stripe_events(order_id) WHERE order_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_refresh_family ON public.refresh_tokens(family_id);
 CREATE INDEX IF NOT EXISTS idx_password_reset_expiry ON public.password_reset_tokens(expires_at) WHERE used_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_email_queue ON public.email_notifications(status, created_at);

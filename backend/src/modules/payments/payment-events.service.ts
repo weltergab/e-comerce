@@ -31,6 +31,18 @@ interface PaymentResult {
   exhausted?: boolean;
 }
 
+export function isMissingStripeEventOrderId(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  const failure = error as { code?: unknown; message?: unknown; details?: unknown };
+  const code = typeof failure.code === 'string' ? failure.code : '';
+  const description = [failure.message, failure.details]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ');
+  return ['42703', 'PGRST204'].includes(code)
+    && /stripe_events/i.test(description)
+    && /order_id/i.test(description);
+}
+
 export function paymentStatus(eventType: string, stripeStatus: string) {
   if (eventType === 'checkout.session.async_payment_succeeded') return 'succeeded';
   if (eventType === 'checkout.session.async_payment_failed') return 'failed';
@@ -68,13 +80,24 @@ async function associatePaymentIntent(orderId: string, paymentIntentId: string) 
 }
 
 export async function persistPaymentEvent(input: PaymentEventInput) {
-  const { error } = await db().from('stripe_events').upsert({
+  const event = {
     event_id: input.eventId,
     event_type: input.eventType,
     object_id: input.objectId,
     order_id: input.orderId || null,
     processing_status: 'received',
-  }, { onConflict: 'event_id', ignoreDuplicates: true });
+  };
+  let { error } = await db().from('stripe_events').upsert(event, { onConflict: 'event_id', ignoreDuplicates: true });
+  if (isMissingStripeEventOrderId(error)) {
+    const legacyEvent = {
+      event_id: event.event_id,
+      event_type: event.event_type,
+      object_id: event.object_id,
+      processing_status: event.processing_status,
+    };
+    ({ error } = await db().from('stripe_events').upsert(legacyEvent, { onConflict: 'event_id', ignoreDuplicates: true }));
+    logger.warn('stripe_events_order_id_missing', { eventId: input.eventId });
+  }
   if (error) throw new AppError(503, 'EVENT_PERSIST_FAILED', 'Evento não persistido; tente novamente.');
 }
 
@@ -89,7 +112,11 @@ export async function processPaymentEvent(eventId: string): Promise<PaymentResul
   const { data: event, error } = await db().from('stripe_events').select('*').eq('event_id', eventId).maybeSingle();
   if (error) throw new AppError(500, 'EVENT_READ_FAILED', 'Não foi possível ler o evento de pagamento.');
   if (!event) throw new AppError(404, 'EVENT_NOT_FOUND', 'Evento de pagamento não encontrado.');
-  if (event.processing_status === 'processed') return orderResult(event.order_id);
+  if (event.processing_status === 'processed') {
+    if (event.order_id) return orderResult(event.order_id);
+    const processedIntent = await stripe().paymentIntents.retrieve(event.object_id);
+    return orderResult(processedIntent.metadata.orderId);
+  }
 
   const attempt = Number(event.attempt_count) + 1;
   if (attempt > 10) {
@@ -132,12 +159,21 @@ export async function processPaymentEvent(eventId: string): Promise<PaymentResul
     });
     if (applyError) throw applyError;
 
-    const { error: processedError } = await db().from('stripe_events').update({
+    const processedEvent = {
       order_id: orderId,
       processing_status: 'processed',
       processed_at: new Date().toISOString(),
       error_summary: null,
-    }).eq('event_id', event.event_id);
+    };
+    let { error: processedError } = await db().from('stripe_events').update(processedEvent).eq('event_id', event.event_id);
+    if (isMissingStripeEventOrderId(processedError)) {
+      const legacyProcessedEvent = {
+        processing_status: processedEvent.processing_status,
+        processed_at: processedEvent.processed_at,
+        error_summary: processedEvent.error_summary,
+      };
+      ({ error: processedError } = await db().from('stripe_events').update(legacyProcessedEvent).eq('event_id', event.event_id));
+    }
     if (processedError) throw processedError;
     logger.info('stripe_event_processed', { eventId, orderId, paymentIntentId: intent.id });
     return orderResult(orderId);

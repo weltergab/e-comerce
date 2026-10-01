@@ -188,6 +188,7 @@ sequenceDiagram
 - [x] A reserva dura 15 minutos; a Checkout Session tem expiração de segurança de 30 minutos e é encerrada pela tarefa de reserva quando necessário.
 - [x] Falha ao criar, associar ou agendar a sessão executa compensação: expira a sessão quando possível e libera a reserva.
 - [x] Eventos Stripe são deduplicados por `event_id` e processados de forma assíncrona.
+- [x] `stripe_events.order_id` possui migration incremental; durante a transição, schemas antigos usam o `orderId` assinado nos metadados do PaymentIntent.
 - [x] Estados financeiros terminais não são rebaixados por eventos atrasados.
 - [x] Pagamento aprovado converte reserva em venda, reduz `on_hand` e cria a notificação de e-mail na mesma transação.
 - [x] Falha, cancelamento ou expiração libera a reserva.
