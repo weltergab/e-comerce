@@ -6,10 +6,10 @@ import type { AccessClaims } from './auth.types';
 const issuer = 'storecy-api';
 const audience = 'storecy-web';
 
-export function signAccessToken(user: AccessClaims) {
+export function signAccessToken(user: AccessClaims, expiresInSeconds: number) {
   return jwt.sign(user, getEnv().jwtSecret, {
     algorithm: 'HS256',
-    expiresIn: '15m',
+    expiresIn: expiresInSeconds,
     issuer,
     audience,
     jwtid: randomUUID(),

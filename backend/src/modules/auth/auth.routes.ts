@@ -1,59 +1,59 @@
 import { Router, type Response } from 'express';
-import { getEnv } from '../../config/env';
-import { authLimiter } from '../../config/security';
+import { authLimiter, refreshLimiter } from '../../config/security';
 import { AppError } from '../../shared/errors';
 import { asyncHandler } from '../../shared/http';
 import { logger } from '../../shared/logger';
-import { requireAuth } from './auth.middleware';
+import { requireAuth, requireTrustedOrigin } from './auth.middleware';
+import { clearedRefreshCookie, cookieValue, refreshCookie, REFRESH_COOKIE_NAME } from './auth.cookies';
 import { parseLogin, parseRegistration } from './auth.schemas';
 import { currentUser, login, register, requestPasswordReset, resetPassword, revokeSession, rotateSession } from './auth.service';
 
-const refreshCookie = 'storecy_refresh';
-
-function cookieValue(header: string | undefined, name: string) {
-  const entry = header?.split(';').map((item) => item.trim()).find((item) => item.startsWith(`${name}=`));
-  return entry ? decodeURIComponent(entry.slice(name.length + 1)) : undefined;
-}
-
-function setRefreshCookie(res: Response, token: string) {
-  const secure = getEnv().nodeEnv === 'production' ? '; Secure' : '';
-  res.setHeader('Set-Cookie', `${refreshCookie}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/api/auth; Max-Age=2592000${secure}`);
+function setRefreshCookie(res: Response, token: string, expiresAt: string) {
+  res.setHeader('Set-Cookie', refreshCookie(token, expiresAt));
 }
 
 function clearRefreshCookie(res: Response) {
-  const secure = getEnv().nodeEnv === 'production' ? '; Secure' : '';
-  res.setHeader('Set-Cookie', `${refreshCookie}=; HttpOnly; SameSite=Lax; Path=/api/auth; Max-Age=0${secure}`);
+  res.setHeader('Set-Cookie', clearedRefreshCookie());
 }
 
 export const authRoutes = Router();
+authRoutes.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
 
-authRoutes.post('/login', authLimiter, asyncHandler(async (req, res) => {
+authRoutes.post('/login', requireTrustedOrigin, authLimiter, asyncHandler(async (req, res) => {
   const input = parseLogin(req.body);
   const session = await login(input.emailOrUsername, input.password);
-  setRefreshCookie(res, session.refreshToken);
+  setRefreshCookie(res, session.refreshToken, session.expiresAt);
   res.json({ accessToken: session.accessToken, user: session.user });
 }));
 
-authRoutes.post('/register', authLimiter, asyncHandler(async (req, res) => {
+authRoutes.post('/register', requireTrustedOrigin, authLimiter, asyncHandler(async (req, res) => {
   const input = parseRegistration(req.body);
   const session = await register(input.email, input.username, input.password);
-  setRefreshCookie(res, session.refreshToken);
+  setRefreshCookie(res, session.refreshToken, session.expiresAt);
   res.status(201).json({ accessToken: session.accessToken, user: session.user });
 }));
 
-authRoutes.post('/refresh', authLimiter, asyncHandler(async (req, res) => {
-  const token = cookieValue(req.headers.cookie, refreshCookie);
+authRoutes.post('/refresh', requireTrustedOrigin, refreshLimiter, asyncHandler(async (req, res) => {
+  const token = cookieValue(req.headers.cookie, REFRESH_COOKIE_NAME);
   if (!token) {
     res.status(204).end();
     return;
   }
-  const session = await rotateSession(token);
-  setRefreshCookie(res, session.refreshToken);
-  res.json({ accessToken: session.accessToken, user: session.user });
+  try {
+    const session = await rotateSession(token);
+    setRefreshCookie(res, session.refreshToken, session.expiresAt);
+    res.json({ accessToken: session.accessToken, user: session.user });
+  } catch (error) {
+    if (error instanceof AppError && error.status === 401) clearRefreshCookie(res);
+    throw error;
+  }
 }));
 
-authRoutes.post('/logout', asyncHandler(async (req, res) => {
-  await revokeSession(cookieValue(req.headers.cookie, refreshCookie));
+authRoutes.post('/logout', requireTrustedOrigin, asyncHandler(async (req, res) => {
+  await revokeSession(cookieValue(req.headers.cookie, REFRESH_COOKIE_NAME));
   clearRefreshCookie(res);
   res.status(204).end();
 }));

@@ -4,6 +4,7 @@ const apiBaseUrl = (isLocalFrontend ? import.meta.env.VITE_BACKEND_LOCAL_URL : i
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
+const refreshRetryDelays = [200, 500, 1_000];
 
 export interface ApiErrorBody {
   code?: string;
@@ -26,11 +27,28 @@ export function setAccessToken(token: string | null) {
   accessToken = token;
 }
 
+function wait(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+export async function requestSessionRefresh() {
+  let response = await fetch(apiUrl('/api/auth/refresh'), { method: 'POST', credentials: 'include' });
+  for (const delay of refreshRetryDelays) {
+    if (response.status !== 409) break;
+    await wait(delay);
+    response = await fetch(apiUrl('/api/auth/refresh'), { method: 'POST', credentials: 'include' });
+  }
+  return response;
+}
+
 async function refreshAccessToken() {
   if (!refreshPromise) {
-    refreshPromise = fetch(apiUrl('/api/auth/refresh'), { method: 'POST', credentials: 'include' })
+    refreshPromise = requestSessionRefresh()
       .then(async (response) => {
-        if (!response.ok) return null;
+        if (!response.ok || response.status === 204) {
+          if (response.status === 401 || response.status === 204) setAccessToken(null);
+          return null;
+        }
         const data = await response.json() as { accessToken: string };
         setAccessToken(data.accessToken);
         return data.accessToken;

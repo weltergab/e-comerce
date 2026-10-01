@@ -6,6 +6,7 @@ import { getEnv } from '../../config/env';
 import { db } from '../../db/client';
 import { AppError } from '../../shared/errors';
 import { hashRefreshToken, newRefreshToken, signAccessToken } from './auth.tokens';
+import { accessTokenSecondsRemaining, boundedSessionExpiry, isRecentRefreshRotation, newSessionExpiry } from './auth.session';
 import type { AuthUser } from './auth.types';
 
 interface UserRow {
@@ -24,9 +25,10 @@ function daysFromNow(days: number) {
   return new Date(Date.now() + days * DAY_SECONDS * 1000).toISOString();
 }
 
-async function issueSession(user: AuthUser, familyId = randomUUID()) {
+async function issueSession(user: AuthUser, familyId = randomUUID(), expiresAt = newSessionExpiry()) {
+  const accessTokenTtl = accessTokenSecondsRemaining(expiresAt);
+  if (accessTokenTtl <= 0) throw new AppError(401, 'SESSION_EXPIRED', 'Sessão expirada. Entre novamente.');
   const refreshToken = newRefreshToken();
-  const expiresAt = daysFromNow(30);
   const { data: storedToken, error } = await db().from('refresh_tokens').insert({
     user_id: user.id,
     token_hash: hashRefreshToken(refreshToken),
@@ -44,8 +46,9 @@ async function issueSession(user: AuthUser, familyId = randomUUID()) {
   }
 
   return {
-    accessToken: signAccessToken({ userId: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin }),
+    accessToken: signAccessToken({ userId: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin }, accessTokenTtl),
     refreshToken,
+    expiresAt,
     user,
   };
 }
@@ -70,8 +73,12 @@ export async function register(email: string, username: string, password: string
 
 export async function rotateSession(rawToken: string) {
   const tokenHash = hashRefreshToken(rawToken);
-  const { data } = await db().from('refresh_tokens').select('id,user_id,family_id,expires_at,revoked_at').eq('token_hash', tokenHash).maybeSingle();
-  if (!data || data.revoked_at || new Date(data.expires_at).getTime() <= Date.now()) {
+  const { data } = await db().from('refresh_tokens').select('id,user_id,family_id,expires_at,revoked_at,created_at').eq('token_hash', tokenHash).maybeSingle();
+  const expiresAt = data ? boundedSessionExpiry(data.expires_at, data.created_at) : undefined;
+  if (data?.revoked_at && isRecentRefreshRotation(data.revoked_at)) {
+    throw new AppError(409, 'REFRESH_ALREADY_ROTATED', 'A sessão já está sendo renovada.');
+  }
+  if (!data || data.revoked_at || Date.parse(expiresAt!) <= Date.now()) {
     if (data?.family_id) {
       await db().from('refresh_tokens').update({ revoked_at: new Date().toISOString() }).eq('family_id', data.family_id).is('revoked_at', null);
     }
@@ -80,15 +87,13 @@ export async function rotateSession(rawToken: string) {
 
   const revokedAt = new Date().toISOString();
   const { data: revoked, error: revokeError } = await db().from('refresh_tokens').update({ revoked_at: revokedAt }).eq('id', data.id).is('revoked_at', null).select('id').maybeSingle();
-  if (revokeError || !revoked) {
-    await db().from('refresh_tokens').update({ revoked_at: revokedAt }).eq('family_id', data.family_id).is('revoked_at', null);
-    throw new AppError(401, 'REFRESH_REPLAY', 'Sessão inválida. Entre novamente.');
-  }
+  if (revokeError) throw new AppError(500, 'SESSION_REFRESH_FAILED', 'Não foi possível renovar a sessão.');
+  if (!revoked) throw new AppError(409, 'REFRESH_ALREADY_ROTATED', 'A sessão já está sendo renovada.');
   await enqueueDeferredTask({ type: 'refresh-token-cleanup', tokenId: data.id }, daysFromNow(30));
 
   const { data: userData } = await db().from('users').select('id,email,username,password_hash,is_admin').eq('id', data.user_id).single();
   if (!userData) throw new AppError(401, 'USER_NOT_FOUND', 'Sessão inválida.');
-  return issueSession(publicUser(userData as UserRow), data.family_id);
+  return issueSession(publicUser(userData as UserRow), data.family_id, expiresAt!);
 }
 
 export async function revokeSession(rawToken?: string) {

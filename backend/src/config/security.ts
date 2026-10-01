@@ -23,6 +23,14 @@ export const authLimiter = rateLimit({
   handler: (req, res) => res.status(429).json({ code: 'RATE_LIMITED', message: 'Muitas tentativas. Aguarde antes de tentar novamente.', requestId: req.requestId }),
 });
 
+export const refreshLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 120,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ code: 'RATE_LIMITED', message: 'Muitas renovações de sessão. Aguarde e tente novamente.', requestId: req.requestId }),
+});
+
 export const checkoutLimiter = rateLimit({
   windowMs: 60_000,
   limit: 10,

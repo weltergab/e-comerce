@@ -2,6 +2,15 @@ import type { RequestHandler } from 'express';
 import { db } from '../../db/client';
 import { AppError } from '../../shared/errors';
 import { verifyAccessToken } from './auth.tokens';
+import { getEnv } from '../../config/env';
+
+export const requireTrustedOrigin: RequestHandler = (req, _res, next) => {
+  const origin = req.header('origin')?.replace(/\/$/, '');
+  if (origin && !getEnv().corsOrigins.includes(origin)) {
+    return next(new AppError(403, 'UNTRUSTED_ORIGIN', 'Origem da requisição não autorizada.'));
+  }
+  next();
+};
 
 export const requireAuth: RequestHandler = (req, _res, next) => {
   const authorization = req.header('authorization');

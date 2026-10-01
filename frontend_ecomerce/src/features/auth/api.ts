@@ -1,4 +1,4 @@
-import { apiFetch, ApiError, apiJson, type ApiErrorBody } from '@/lib/api/client';
+import { ApiError, apiJson, requestSessionRefresh, type ApiErrorBody } from '@/lib/api/client';
 import type { User } from './types';
 
 export interface AuthSession {
@@ -7,7 +7,7 @@ export interface AuthSession {
 }
 
 export async function refreshSession(): Promise<AuthSession | null> {
-  const response = await apiFetch('/api/auth/refresh', { method: 'POST' });
+  const response = await requestSessionRefresh();
   if (response.status === 204) return null;
   const body = await response.json().catch(() => ({})) as AuthSession & ApiErrorBody;
   if (!response.ok) throw new ApiError(response.status, body);

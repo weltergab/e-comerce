@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { refreshSession, registerAccount } from './api';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('registerAccount', () => {
   it('envia o cadastro exclusivamente por POST', async () => {
@@ -33,5 +36,29 @@ describe('refreshSession', () => {
     await expect(refreshSession()).resolves.toBeNull();
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
+  });
+
+  it('repete a renovação quando outra aba acabou de rotacionar o cookie', async () => {
+    vi.useFakeTimers();
+    const session = {
+      accessToken: 'novo-token',
+      user: { id: 'user-1', email: 'user@example.com', username: 'user1', isAdmin: false },
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ code: 'REFRESH_ALREADY_ROTATED' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(session), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = refreshSession();
+    await vi.runAllTimersAsync();
+
+    await expect(result).resolves.toEqual(session);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

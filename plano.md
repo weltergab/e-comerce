@@ -1,6 +1,6 @@
 # Plano de arquitetura e produção do Storecy
 
-Revisão baseada no código em **29/09/2026**. Este plano substitui análises da arquitetura antiga e separa o que já está implementado do que ainda depende de engenharia, configuração externa ou validação operacional.
+Revisão baseada no código em **30/09/2026**. Este plano substitui análises da arquitetura antiga e separa o que já está implementado do que ainda depende de engenharia, configuração externa ou validação operacional.
 
 ## Legenda
 
@@ -29,6 +29,9 @@ Marcar um item como implementado significa que o comportamento existe no código
 - [x] JWT de acesso em memória no frontend.
 - [x] Refresh token opaco, com hash no banco, cookie `HttpOnly`, rotação e revogação por família.
 - [x] Detecção de replay de refresh token.
+- [x] Sessão absoluta de uma hora, restaurada após fechar/retornar ao site e após o redirecionamento do Stripe.
+- [x] Cookie de produção compatível com frontend/API entre sites e proteção de origem contra CSRF.
+- [x] Renovação concorrente entre abas tratada sem revogar indevidamente a família da sessão.
 - [x] Logout e troca de senha revogam sessões relacionadas.
 - [x] Recuperação de senha com token de uso único, expiração e resposta que evita enumeração de conta.
 - [x] Guardas de autenticação e administração no backend e no roteamento do frontend.
@@ -221,8 +224,8 @@ Estes itens são bloqueadores operacionais mesmo quando o código correspondente
 ### Sessão e segurança
 
 - [ ] Access token não aparece em `localStorage` ou `sessionStorage`.
-- [ ] Cookie de refresh possui `HttpOnly`, `Secure`, `SameSite=Lax` e path restrito em produção.
-- [ ] Refresh concorrente não cria múltiplas rotações no frontend.
+- [x] Cookie de refresh possui `HttpOnly`, `Secure`, `SameSite=None`, `Partitioned`, duração máxima de uma hora e path restrito em produção.
+- [x] Refresh concorrente é coordenado na mesma aba e recuperado com retry limitado entre abas.
 - [ ] Reutilização de refresh token revogado invalida a família.
 - [ ] Usuário comum recebe `403` nas rotas administrativas.
 - [ ] Origem não autorizada não recebe cabeçalho CORS permissivo.

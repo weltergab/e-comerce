@@ -1,6 +1,6 @@
 # Arquitetura do Storecy
 
-Estado do código em **29/09/2026**. Este documento descreve somente a arquitetura presente no repositório; ações ainda necessárias estão identificadas como pendentes.
+Estado do código em **30/09/2026**. Este documento descreve somente a arquitetura presente no repositório; ações ainda necessárias estão identificadas como pendentes.
 
 ## Legenda de status
 
@@ -93,8 +93,8 @@ flowchart LR
 
 - [x] Catálogo, detalhe de produto, carrinho persistido localmente e tema.
 - [x] Cadastro, login, logout, restauração da sessão e recuperação de senha.
-- [x] Access token mantido somente em memória e refresh token em cookie `HttpOnly` enviado com `credentials: include`.
-- [x] Cliente HTTP único em `lib/api/client.ts`, com uma tentativa coordenada de refresh após `401`.
+- [x] Access token mantido somente em memória e refresh token persistente por uma hora em cookie `HttpOnly`, enviado com `credentials: include`.
+- [x] Cliente HTTP único em `lib/api/client.ts`, com refresh coordenado após `401` e retry limitado para rotações concorrentes entre abas.
 - [x] Rotas protegidas para checkout, pedidos do cliente e administração.
 - [x] Formulário de endereço com criação de chave de idempotência por carrinho.
 - [x] Redirecionamento para a URL da Checkout Session retornada pelo backend.
@@ -136,8 +136,9 @@ flowchart LR
 - [x] Rate limit geral, mais limites específicos para autenticação e checkout.
 - [x] Erros com formato estável (`code`, `message`, `requestId` e, quando aplicável, `fieldErrors`).
 - [x] Logs estruturados e redação de chaves sensíveis conhecidas.
-- [x] Senhas com bcrypt, JWT de curta duração, rotação de refresh token por família e detecção de replay.
-- [x] Cookie de refresh `HttpOnly`, `SameSite=Lax`, limitado a `/api/auth` e `Secure` em produção.
+- [x] Senhas com bcrypt, JWT de acesso de até 15 minutos, sessão absoluta de uma hora, rotação de refresh token por família e detecção de replay fora da janela curta de concorrência.
+- [x] Cookie de refresh `HttpOnly`, limitado a `/api/auth`; em produção usa `Secure`, `SameSite=None` e `Partitioned` para persistir entre o frontend e a API em sites distintos.
+- [x] Rotas que criam, renovam ou encerram sessão rejeitam `Origin` fora da allowlist e respostas de autenticação usam `Cache-Control: no-store`.
 - [x] Autorização administrativa revalidada no banco por `is_admin`.
 - [x] Validação estrita de checkout, endereço, paginação, produtos e origens de imagem.
 
