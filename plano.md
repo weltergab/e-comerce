@@ -61,7 +61,11 @@ Marcar um item como implementado significa que o comportamento existe no código
 ### Checkout e pagamentos
 
 - [x] Checkout exige usuário autenticado, itens válidos, endereço brasileiro e `Idempotency-Key`.
-- [x] Cliente envia apenas `productId`, quantidade e endereço; preço e total são calculados no servidor.
+- [x] Endereços pertencem à conta do cliente, podem ser criados, selecionados e editados no checkout, com um único endereço principal.
+- [x] O pedido guarda um snapshot do endereço salvo; edições futuras não alteram pedidos existentes.
+- [x] Uma chave só retoma o mesmo carrinho e endereço enquanto a Checkout Session está aberta; tentativas concluídas nunca retornam a tela de sucesso por `POST /api/checkout`.
+- [x] Cada decisão de iniciar o pagamento usa uma nova chave; abandonar e refazer uma compra idêntica cria outro pedido.
+- [x] Cliente envia apenas `productId`, quantidade e `shippingAddressId`; endereço, preço e total são resolvidos no servidor.
 - [x] Pedido, snapshots, reserva e movimentos são criados atomicamente no Postgres.
 - [x] Checkout Sessions em `hosted_page`, sem Payment Element ou Stripe.js no bundle do frontend.
 - [x] Retorno ao site por `success_url` contendo apenas `order_id`; nenhum `client_secret` trafega pelo frontend.
@@ -160,6 +164,7 @@ Estes itens são bloqueadores operacionais mesmo quando o código correspondente
 - [ ] Aplicar `backend/database/20260928_service_role_privileges.sql` se os privilégios da service role ainda não estiverem garantidos.
 - [ ] Aplicar `backend/database/20260929_checkout_sessions.sql` antes de publicar o backend com Checkout Sessions.
 - [ ] Aplicar `backend/database/20260930_stripe_event_order_id.sql` para persistir a associação entre eventos Stripe e pedidos.
+- [ ] Aplicar `backend/database/20261001_user_addresses.sql` antes de publicar a seleção de endereços no checkout.
 - [ ] Confirmar em `public.orders` a coluna e o índice único de `stripe_checkout_session_id`.
 - [ ] Confirmar que a credencial em `SUPABASE_SECRET_KEY` é a chave secreta/service role do projeto correto, nunca uma chave publicável.
 - [ ] Configurar `JWT_SECRET` e `JWT_REFRESH_SECRET` distintos, aleatórios e com pelo menos 32 caracteres.
@@ -215,6 +220,8 @@ Estes itens são bloqueadores operacionais mesmo quando o código correspondente
 ### Compra e pagamento
 
 - [ ] Duas requisições simultâneas com a mesma chave resultam no mesmo pedido/sessão.
+- [x] Uma nova compra com os mesmos produtos não reutiliza um pedido pago nem pode pular a página hospedada do Stripe.
+- [x] Dois checkouts intencionais com os mesmos itens geram pedidos diferentes; somente retries técnicos da mesma submissão reutilizam a chave.
 - [ ] Dois clientes disputando o último item não vendem estoque negativo.
 - [ ] Preço alterado no payload do navegador não altera o valor cobrado.
 - [ ] Cartão aprovado leva o pedido a `paid` e converte a reserva em venda uma única vez.

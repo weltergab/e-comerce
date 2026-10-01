@@ -23,7 +23,7 @@ export default function SuccessContent() {
   }, [orderId]);
 
   useEffect(() => {
-    if (!orderId || !orderStatus.data || cartUpdated.current) return;
+    if (!orderId || paymentStatus !== 'succeeded' || cartUpdated.current) return;
     cartUpdated.current = true;
     const storageKey = `checkout_order_items:${orderId}`;
     try {
@@ -35,7 +35,7 @@ export default function SuccessContent() {
     } finally {
       sessionStorage.removeItem(storageKey);
     }
-  }, [completeOrder, orderId, orderStatus.data]);
+  }, [completeOrder, orderId, paymentStatus]);
 
   useEffect(() => {
     if (paymentStatus !== 'succeeded') return;

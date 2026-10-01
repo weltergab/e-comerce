@@ -96,7 +96,8 @@ flowchart LR
 - [x] Access token mantido somente em memória e refresh token persistente por uma hora em cookie `HttpOnly`, enviado com `credentials: include`.
 - [x] Cliente HTTP único em `lib/api/client.ts`, com refresh coordenado após `401` e retry limitado para rotações concorrentes entre abas.
 - [x] Rotas protegidas para checkout, pedidos do cliente e administração.
-- [x] Formulário de endereço com criação de chave de idempotência por carrinho.
+- [x] Endereços persistidos na conta, com seleção, criação e edição no checkout; o endereço principal é escolhido automaticamente.
+- [x] Chave de idempotência por tentativa de pagamento, renovada antes de sair para o Stripe para que uma nova compra idêntica gere outro pedido.
 - [x] Redirecionamento para a URL da Checkout Session retornada pelo backend.
 - [x] Página de sucesso que solicita reconciliação pontual e consulta o status a cada 2,5 segundos, parando em estado terminal ou após 20 respostas/tentativas.
 - [x] Área administrativa para catálogo, imagens, conteúdo da introdução, pedidos, notas e fulfillment.
@@ -119,6 +120,7 @@ flowchart LR
 | Saúde | `GET /api/health` | [x] |
 | Autenticação | `POST /api/auth/login`, `register`, `refresh`, `logout`, `password-reset/request`, `password-reset/confirm`; `GET /api/auth/me` | [x] |
 | Catálogo público | `GET /api/products`, `GET /api/products/:id` | [x] |
+| Endereços da conta | `GET`, `POST /api/account/addresses`; `PUT`, `DELETE /api/account/addresses/:id` | [x] |
 | Checkout | `POST /api/checkout` | [x] |
 | Pedidos do cliente | `GET /api/orders`, `GET /api/orders/:id/status`, `POST /api/orders/:id/payment-reconciliation` | [x] |
 | Conteúdo público | `GET /api/parameters/introduction-header` | [x] |
@@ -155,8 +157,9 @@ sequenceDiagram
     participant S as Stripe
     participant Q as Vercel Queue
 
-    C->>F: Confirma endereço e carrinho
-    F->>A: POST /api/checkout<br/>itens + endereço + Idempotency-Key
+    C->>F: Seleciona endereço salvo e confirma o carrinho
+    F->>A: POST /api/checkout<br/>itens + shippingAddressId + Idempotency-Key
+    A->>D: Resolve o endereço dentro da conta e cria um snapshot
     A->>D: Lê produtos, preços e moeda
     A->>D: create_checkout_order(...)
     D-->>A: Pedido + snapshot + reserva atômica
@@ -183,7 +186,10 @@ sequenceDiagram
 ### Garantias implementadas
 
 - [x] O backend recalcula o total com preço e moeda do Postgres.
-- [x] `Idempotency-Key` é único por usuário e reaproveita um checkout compatível.
+- [x] O backend resolve `shippingAddressId` somente dentro da conta autenticada e copia o endereço para o snapshot do pedido.
+- [x] `Idempotency-Key` é único por usuário e reaproveita somente retries técnicos da mesma tentativa.
+- [x] A retomada idempotente exige carrinho e endereço idênticos e uma Checkout Session aberta; `POST /api/checkout` nunca devolve a URL de sucesso de um pedido concluído.
+- [x] O frontend aceita como destino do início do pagamento somente `https://checkout.stripe.com` e encerra a chave da tentativa após estado terminal.
 - [x] `create_checkout_order` usa lock, valida saldo, cria snapshots e reserva estoque na mesma transação.
 - [x] A reserva dura 15 minutos; a Checkout Session tem expiração de segurança de 30 minutos e é encerrada pela tarefa de reserva quando necessário.
 - [x] Falha ao criar, associar ou agendar a sessão executa compensação: expira a sessão quando possível e libera a reserva.
@@ -225,6 +231,7 @@ Todas as tarefas usam o tópico `storecy-tasks`. Tarefas com prazo superior ao l
 erDiagram
     USERS ||--o{ REFRESH_TOKENS : possui
     USERS ||--o{ PASSWORD_RESET_TOKENS : solicita
+    USERS ||--o{ USER_ADDRESSES : cadastra
     USERS o|--o{ ORDERS : realiza
     USERS o|--o{ INVENTORY_MOVEMENTS : executa
     USERS o|--o{ PRODUCT_IMAGES : envia
@@ -246,7 +253,7 @@ erDiagram
 
 | Grupo | Tabelas | Responsabilidade | Status |
 |---|---|---|---|
-| Identidade | `users`, `refresh_tokens`, `password_reset_tokens` | Conta, sessão, revogação e recuperação | [x] |
+| Identidade | `users`, `user_addresses`, `refresh_tokens`, `password_reset_tokens` | Conta, endereços, sessão, revogação e recuperação | [x] |
 | Catálogo | `products`, `product_images`, `parameters` | Produto oficial, mídia e conteúdo configurável | [x] |
 | Pedidos | `orders`, `order_items`, `email_notifications` | Snapshot, pagamento, fulfillment e outbox | [x] |
 | Estoque | `inventory`, `inventory_reservations`, `inventory_movements` | Saldo físico, reserva e ledger | [x] |
@@ -261,6 +268,7 @@ erDiagram
 - [x] `manual_return_inventory`: devolve fisicamente itens com auditoria.
 - [x] `update_order_fulfillment`: impõe `paid -> packing -> shipped -> delivered`.
 - [x] `redact_order_pii`: anonimiza pedidos terminais após a retenção.
+- [x] `save_user_address` e `delete_user_address`: mantêm atomicamente a propriedade e um único endereço principal por conta.
 
 ### Modelo de acesso
 

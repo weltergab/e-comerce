@@ -29,4 +29,22 @@ describe('parseCheckout', () => {
     expect(() => parseIdempotencyKey(undefined)).toThrow(/Idempotency-Key/);
     expect(parseIdempotencyKey('checkout_12345678')).toBe('checkout_12345678');
   });
+
+  it('aceita a seleção de um endereço salvo sem receber outro endereço', () => {
+    expect(parseCheckout({
+      items: [{ productId: 'prod_123', quantity: 1 }],
+      shippingAddressId: 'ca032c70-3ed6-486e-8c4c-055c79a1402a',
+    })).toEqual({
+      items: [{ productId: 'prod_123', quantity: 1 }],
+      shippingAddressId: 'ca032c70-3ed6-486e-8c4c-055c79a1402a',
+    });
+  });
+
+  it('rejeita endereço salvo e endereço avulso simultâneos', () => {
+    expect(() => parseCheckout({
+      items: [{ productId: 'prod_123', quantity: 1 }],
+      shippingAddressId: 'ca032c70-3ed6-486e-8c4c-055c79a1402a',
+      shippingAddress: address,
+    })).toThrow(/Selecione um endereço salvo/);
+  });
 });

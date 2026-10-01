@@ -30,7 +30,21 @@ export interface ShippingAddress {
 
 export interface CheckoutRequest {
   items: Array<{ productId: string; quantity: number }>;
-  shippingAddress: ShippingAddress;
+  shippingAddress?: ShippingAddress;
+  shippingAddressId?: string;
+}
+
+export interface SavedAddress extends ShippingAddress {
+  id: string;
+  label: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedAddressInput extends ShippingAddress {
+  label: string;
+  isDefault: boolean;
 }
 
 export interface CheckoutResponse {

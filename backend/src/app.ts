@@ -11,6 +11,7 @@ import { checkoutRoutes } from './modules/checkout/checkout.routes';
 import { adminContentRoutes, contentRoutes } from './modules/content/content.routes';
 import { orderRoutes } from './modules/orders/orders.routes';
 import { stripeWebhookRoutes } from './modules/webhooks/stripe-webhook.routes';
+import { addressRoutes } from './modules/addresses/addresses.routes';
 import { initMonitoring } from './config/monitoring';
 
 initMonitoring();
@@ -49,6 +50,7 @@ app.use(express.json({ limit: '256kb', strict: true }));
 app.get('/api/health', (_req, res) => res.json({ service: 'storecy-backend', ok: true, checkedAt: new Date().toISOString() }));
 app.use('/api/auth', authRoutes);
 app.use('/api/products', catalogRoutes);
+app.use('/api/account/addresses', addressRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/parameters', contentRoutes);
