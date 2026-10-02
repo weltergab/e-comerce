@@ -1,6 +1,6 @@
 # Plano de arquitetura e produção do Storecy
 
-Revisão baseada no código em **30/09/2026**. Este plano substitui análises da arquitetura antiga e separa o que já está implementado do que ainda depende de engenharia, configuração externa ou validação operacional.
+Revisão baseada no código em **02/10/2026**. Este plano substitui análises da arquitetura antiga e separa o que já está implementado do que ainda depende de engenharia, configuração externa ou validação operacional.
 
 ## Legenda
 
@@ -56,7 +56,8 @@ Marcar um item como implementado significa que o comportamento existe no código
 - [x] Conteúdo da introdução editável pelo administrador, com fallback seguro.
 - [x] Script de importação inicial do catálogo Stripe para o banco.
 - [ ] Teste de reconciliação em massa para divergências entre catálogo local e Stripe.
-- [ ] Interface administrativa para inspecionar e corrigir divergências apontadas por `/api/admin/metrics`.
+- [x] Interface administrativa `/admin/sync` para comparar catálogo, estoque e valor e corrigir divergências nos dois sentidos pelo código Stripe.
+- [x] Logs persistentes de sincronização com autor, lote, ação, resultado e snapshots; importação completa com progresso e preservação de reservas.
 
 ### Checkout e pagamentos
 
@@ -161,6 +162,7 @@ Estes itens são bloqueadores operacionais mesmo quando o código correspondente
 
 - [ ] Fazer backup do banco de produção.
 - [ ] Aplicar `backend/database/create-database.sql` em um banco novo; em banco já existente, revisar o baseline e aplicar as migrations incrementais necessárias.
+- [ ] Aplicar `backend/database/20261002_catalog_sync.sql` em bancos existentes para criar os logs administrativos e a RPC transacional de sincronização.
 - [ ] Aplicar `backend/database/20260928_service_role_privileges.sql` se os privilégios da service role ainda não estiverem garantidos.
 - [ ] Aplicar `backend/database/20260929_checkout_sessions.sql` antes de publicar o backend com Checkout Sessions.
 - [ ] Aplicar `backend/database/20260930_stripe_event_order_id.sql` para persistir a associação entre eventos Stripe e pedidos.
@@ -265,6 +267,24 @@ Estes itens são bloqueadores operacionais mesmo quando o código correspondente
 - [x] A antiga tabela `transactions` não integra o fluxo; instalações legadas a preservam como `transactions_legacy`.
 - [x] Não existe acesso direto do navegador às tabelas privadas do Supabase.
 - [x] Não existe endpoint público de manutenção periódica.
+
+## Sincronização administrativa de catálogo — 02/10/2026
+
+- [x] Parte 1: API administrativa para comparar e sincronizar Stripe/Supabase pelo código Stripe, com auditoria persistente e estoque sem alterar reservas.
+- [x] Parte 2: tela com duas seções, ações individuais, importação completa com progresso e teste de conexões transferido do painel ADM.
+- [x] Parte 3: testes, builds e documentação da migration e das regras de sincronização.
+- [ ] Aplicar a migration de sincronização no Supabase e validar os dois sentidos com serviços reais.
+
+Regras e operação:
+
+- [x] Buscar todos inclui produtos arquivados e percorre todas as páginas de Stripe/Supabase. Produtos já presentes no destino ficam cinza.
+- [x] Importar produto individual inclui estoque/valor e ignora existentes; os ajustes individuais copiam somente estoque ou valor. Importar todos também atualiza os dados dos produtos existentes.
+- [x] Estoque Stripe vem de `metadata.stock`, deve ser inteiro de 0 a 1.000.000 e corresponde a `on_hand - reserved` no Supabase. Dado ausente/inválido é sinalizado sem zerar estoque; preço precisa ser padrão ativo, avulso, por unidade, em BRL e positivo até R$ 1.000.000.
+- [x] Lotes são executados na tela, por produto, com identificador comum e progresso. Manter a aba aberta; falhas de produto não impedem os demais. Falha de autorização/auditoria/rate limit interrompe e informa itens não processados. Após falha parcial, buscar novamente antes de repetir.
+- [x] As operações exigem auditoria disponível antes de alterar o destino. Consultar os últimos 100 logs na tela e registros anteriores em `catalog_sync_logs`.
+- [x] Testes com PostgreSQL isolado (PGlite) verificam importação sem duplicação, atomicidade, reservas, ajustes seletivos e bloqueio dos papéis públicos.
+- [x] Verificação em 02/10/2026: `npm run check` passou no backend (64 testes) e frontend (17 testes); revisão no navegador com respostas simuladas validou desktop/celular, as duas direções, ações, lote com falha parcial, logs, conexões e guarda administrativa.
+- [ ] Em cada ambiente, validar importação ausente, produto já vinculado, diferença de estoque/valor, saldo zero com reserva, lote com falha parcial e logs; confirmar que checkout continua lendo Supabase.
 
 ## 6. Backlog priorizado após estabilização
 

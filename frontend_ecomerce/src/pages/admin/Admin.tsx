@@ -5,7 +5,7 @@ import { AdminDialog, AdminDialogHeader } from '@/components/admin/AdminDialog';
 import { ProductImageManager, ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
-import { Activity, Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare, Plus, ReceiptText } from 'lucide-react';
+import { RefreshCw, Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare, Plus, ReceiptText } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,25 +24,6 @@ interface StripeProduct {
     unit_amount: number | null;
     currency: string;
   } | null;
-}
-
-interface HealthService {
-  ok: boolean;
-  label: string;
-  message: string;
-  checkedAt: string;
-  uptimeSeconds?: number;
-  mode?: string;
-}
-
-interface HealthCheck {
-  ok: boolean;
-  checkedAt: string;
-  services: {
-    backend: HealthService;
-    database: HealthService;
-    stripe: HealthService;
-  };
 }
 
 interface IntroductionHeaderContent {
@@ -70,8 +51,6 @@ export default function AdminPage() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [healthLoading, setHealthLoading] = useState(false);
-  const [healthCheck, setHealthCheck] = useState<HealthCheck | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -132,27 +111,6 @@ export default function AdminPage() {
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
-  };
-
-  const handleCheckHealth = async () => {
-    setHealthLoading(true);
-
-    try {
-      const response = await apiFetch('/api/admin/health');
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Erro ao verificar conexoes');
-        return;
-      }
-
-      setHealthCheck(data);
-    } catch (error) {
-      console.error('Error checking health:', error);
-      alert('Erro ao verificar conexoes');
-    } finally {
-      setHealthLoading(false);
-    }
   };
 
   if (loading) {
@@ -251,8 +209,7 @@ export default function AdminPage() {
 
               <button
                 type="button"
-                onClick={handleCheckHealth}
-                disabled={healthLoading}
+                onClick={() => navigate('/admin/sync')}
                 className="min-h-20 rounded-2xl px-3 py-3 text-left transition-all active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100"
                 style={{
                   backgroundColor: 'var(--color-surface)',
@@ -260,74 +217,12 @@ export default function AdminPage() {
                   border: '1px solid var(--color-borderLight)',
                 }}
               >
-                <Activity className="w-5 h-5 mb-2" style={{ color: 'var(--color-primary)' }} />
-                <span className="block text-sm font-bold">{healthLoading ? 'Verificando' : 'Conexões'}</span>
-                <span className="block text-xs" style={{ color: 'var(--color-textSecondary)' }}>Backend, banco e Stripe</span>
+                <RefreshCw className="w-5 h-5 mb-2" style={{ color: 'var(--color-primary)' }} />
+                <span className="block text-sm font-bold">Sincronização</span>
+                <span className="block text-xs" style={{ color: 'var(--color-textSecondary)' }}>Stripe, Supabase e conexões</span>
               </button>
             </div>
           </div>
-
-          {healthCheck && (
-            <div
-              className="rounded-lg p-5 mb-6"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-                  Status das Conexões
-                </h2>
-                <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                  Atualizado em {new Date(healthCheck.checkedAt).toLocaleString('pt-BR')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  healthCheck.services.backend,
-                  healthCheck.services.database,
-                  healthCheck.services.stripe,
-                ].map((service) => (
-                  <div
-                    key={service.label}
-                    className="rounded-lg p-4"
-                    style={{
-                      backgroundColor: 'var(--color-background)',
-                      border: '1px solid var(--color-borderLight)',
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
-                          {service.label}
-                        </p>
-                        <p className="text-sm" style={{ color: 'var(--color-textSecondary)' }}>
-                          {service.message}
-                        </p>
-                        {service.mode && (
-                          <p className="text-xs mt-2" style={{ color: 'var(--color-textMuted)' }}>
-                            Modo: {service.mode}
-                          </p>
-                        )}
-                        {service.uptimeSeconds !== undefined && (
-                          <p className="text-xs mt-2" style={{ color: 'var(--color-textMuted)' }}>
-                            Uptime: {service.uptimeSeconds}s
-                          </p>
-                        )}
-                      </div>
-                      {service.ok ? (
-                        <CheckCircle className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--color-success)' }} />
-                      ) : (
-                        <AlertTriangle className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--color-error)' }} />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

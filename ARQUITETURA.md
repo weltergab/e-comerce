@@ -1,6 +1,6 @@
 # Arquitetura do Storecy
 
-Estado do código em **30/09/2026**. Este documento descreve somente a arquitetura presente no repositório; ações ainda necessárias estão identificadas como pendentes.
+Estado do código em **02/10/2026**. Este documento descreve somente a arquitetura presente no repositório; ações ainda necessárias estão identificadas como pendentes.
 
 ## Legenda de status
 
@@ -101,6 +101,8 @@ flowchart LR
 - [x] Redirecionamento para a URL da Checkout Session retornada pelo backend.
 - [x] Página de sucesso que solicita reconciliação pontual e consulta o status a cada 2,5 segundos, parando em estado terminal ou após 20 respostas/tentativas.
 - [x] Área administrativa para catálogo, imagens, conteúdo da introdução, pedidos, notas e fulfillment.
+- [x] Tela `/admin/sync` acessível pelo botão Sincronização no ADM: duas seções direcionais, produtos existentes em cinza, diferenças de estoque/valor, importação e ajustes individuais, importação completa com progresso e logs.
+- [x] Teste de conexões de backend, Supabase e Stripe transferido do painel principal para a tela de sincronização.
 - [x] TanStack Query como camada de cache e estado de requisições.
 - [x] Captura de erros pelo Sentry quando `VITE_SENTRY_DSN` está configurado.
 
@@ -127,9 +129,25 @@ flowchart LR
 | Webhook | `POST /api/webhooks/stripe` | [x] |
 | Operação administrativa | `GET /api/admin/health`, `GET /api/admin/metrics` | [x] |
 | Catálogo administrativo | CRUD lógico em `/api/admin/products` e upload em `/api/admin/uploads/product-images` | [x] |
+| Sincronização de catálogo | `GET /api/admin/sync/products?direction=...`, `POST /api/admin/sync/products`, `GET /api/admin/sync/logs` | [x] |
 | Pedidos administrativos | listagem, notas e fulfillment em `/api/admin/orders` | [x] |
 | Estoque administrativo | devolução manual em `/api/admin/inventory/:productId/return` | [x] |
 | Conteúdo administrativo | leitura e atualização de `/api/admin/parameters/introduction-header` | [x] |
+
+### Sincronização administrativa de catálogo
+
+- [x] `catalog-sync.schemas.ts` valida direção (`stripe_to_supabase`/`supabase_to_stripe`), ação (`import`, `stock`, `price`, `all`), código e lote; `catalog-sync.service.ts` resolve os dados diretamente na origem. O navegador envia identificadores, sem escolher o estoque ou valor aplicado.
+- [x] A correspondência usa exclusivamente `products.stripe_product_id` e o ID do produto Stripe, sem comparar nomes. Produtos novos no Supabase recebem o ID Stripe como `products.id`; produtos ausentes no Stripe são criados com o `stripe_product_id` já registrado, preservando vínculos e IDs locais.
+- [x] A busca percorre todas as páginas dos dois provedores, incluindo arquivados. A comparação mostra estoque disponível, valor/moeda e divergências no vínculo do Price padrão.
+- [x] `import` cria somente produtos ausentes e inclui dados, estoque e preço; produtos existentes são ignorados com log. `stock` e `price` exigem destino existente e alteram apenas o campo correspondente. `all` cria ausentes e atualiza dados, estoque e valor dos existentes.
+- [x] O botão de importação completa executa uma requisição por produto com `batchId`, progresso e intervalo de 400 ms, evitando concentrar todo o lote em uma função serverless. Falhas de produto são registradas e o lote continua; perda de sessão/permissão, indisponibilidade da auditoria e rate limit interrompem o lote e informam o que não foi processado. A aba deve permanecer aberta até terminar.
+- [x] O Stripe representa estoque disponível em `metadata.stock`. Metadado ausente, fracionário, negativo ou acima de 1.000.000 impede ações que incluam estoque; não é convertido em zero. Atualizar somente valor continua permitido quando estoque está ausente.
+- [x] Stripe → Supabase usa `sync_stripe_catalog_product`: lock por código, lock do saldo, produto/estoque/ledger na mesma transação. Define `on_hand = reserved + estoque_origem`, preservando reservas; movimentos usam chave de auditoria e não registram quantidade zero. Atualizar valor copia o Price padrão ativo, avulso, por unidade e em BRL, com valor positivo até R$ 1.000.000.
+- [x] Supabase → Stripe grava estoque em metadata. Atualizar valor reaproveita o Price padrão compatível ou cria outro, define `default_price` e salva seu ID no produto local; o Price avulso anterior é arquivado após salvar o vínculo. Preços recorrentes não são arquivados por essa operação. A regra segue a [API de criação de produtos](https://docs.stripe.com/api/products/create) e o [modelo de produtos e preços](https://docs.stripe.com/products-prices/manage-prices) do Stripe.
+- [x] `catalog_sync_logs` registra administrador, sentido, ação, código local/Stripe, lote, início/fim, status, mensagem e snapshots antes/depois. O log inicial e o snapshot são obrigatórios antes de escrever no destino. O painel mostra as últimas 100 operações; os demais registros permanecem no banco.
+- [x] Erros de conexão do Stripe não são tratados como produto ausente. Chamadas de criação/atualização têm chaves idempotentes. Em falhas entre provedores, o log registra o estado posterior quando disponível e a tela exige nova busca; não existe transação distribuída entre Stripe e Postgres.
+- [x] Após sincronizar, o produto é comparado novamente e a outra seção é invalidada. Checkout, reservas e catálogo público continuam usando o Supabase como fonte oficial; importar do Stripe é uma ação explícita do administrador.
+- [ ] Aplicar `backend/database/20261002_catalog_sync.sql` em bancos existentes antes de usar a tela; o schema autoritativo inclui o mesmo SQL para instalações novas. Validar os dois sentidos com Supabase/Stripe reais por ambiente.
 
 ### Segurança de transporte e aplicação
 
@@ -235,6 +253,7 @@ erDiagram
     USERS o|--o{ ORDERS : realiza
     USERS o|--o{ INVENTORY_MOVEMENTS : executa
     USERS o|--o{ PRODUCT_IMAGES : envia
+    USERS o|--o{ CATALOG_SYNC_LOGS : sincroniza
 
     PRODUCTS ||--|| INVENTORY : possui
     PRODUCTS ||--o{ ORDER_ITEMS : snapshot
@@ -258,6 +277,7 @@ erDiagram
 | Pedidos | `orders`, `order_items`, `email_notifications` | Snapshot, pagamento, fulfillment e outbox | [x] |
 | Estoque | `inventory`, `inventory_reservations`, `inventory_movements` | Saldo físico, reserva e ledger | [x] |
 | Pagamentos | `stripe_events` e identificadores Stripe em `orders` | Auditoria, deduplicação e conciliação | [x] |
+| Sincronização | `catalog_sync_logs` | Auditoria persistente de importações, ajustes e lotes entre Supabase e Stripe | [x] |
 
 ### Funções transacionais
 
@@ -265,6 +285,7 @@ erDiagram
 - [x] `release_order_reservation`: libera saldo reservado e encerra o pedido quando aplicável.
 - [x] `apply_payment_state`: aplica transições financeiras e seus efeitos de estoque/outbox.
 - [x] `admin_adjust_inventory`: ajusta saldo sem violar reservas.
+- [x] `sync_stripe_catalog_product`: importa/atualiza catálogo e saldo disponível atomicamente, preservando reservas e gravando ajustes no ledger.
 - [x] `manual_return_inventory`: devolve fisicamente itens com auditoria.
 - [x] `update_order_fulfillment`: impõe `paid -> packing -> shipped -> delivered`.
 - [x] `redact_order_pii`: anonimiza pedidos terminais após a retenção.
@@ -325,5 +346,6 @@ ecomerceReact2/
 - [x] Dependabot agrupa atualizações semanais separadas para backend e frontend.
 - [x] Métricas administrativas para eventos Stripe falhos, estoque negativo, fulfillment parado, e-mails falhos e divergência de catálogo.
 - [x] Health check administrativo valida banco e Stripe.
+- [x] Testes de catálogo cobrem validação, paginação, vínculo por código, ações direcionais, auditoria e indisponibilidade; testes com PGlite executam a migration em PostgreSQL isolado e validam atomicidade, reservas e privilégios.
 - [ ] Testes de integração com banco real isolado, testes E2E no navegador e testes de concorrência ainda precisam ser adicionados.
 - [ ] Alertas, dashboards e procedimentos de recuperação precisam ser validados no ambiente de produção.

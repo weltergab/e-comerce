@@ -12,6 +12,7 @@ import CheckoutSuccess from '@/src/pages/checkout/success/CheckoutSuccess';
 import Product from '@/src/pages/products/Product';
 import Admin from '@/src/pages/admin/Admin';
 import AdminOrders from '@/src/pages/admin/orders/Orders';
+import AdminSync from '@/src/pages/admin/Sync';
 import MyOrders from '@/src/pages/MyOrders';
 import PasswordReset from '@/src/pages/PasswordReset';
 import { RequireAdmin, RequireAuth } from '@/src/app/guards';
@@ -34,6 +35,7 @@ export function App() {
               <Route path="/products/:id" element={<Product />} />
               <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
               <Route path="/admin/orders" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+              <Route path="/admin/sync" element={<RequireAdmin><AdminSync /></RequireAdmin>} />
               <Route path="/my-orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
             </Routes>
           </AppLayout>

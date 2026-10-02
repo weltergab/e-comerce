@@ -12,6 +12,8 @@ import { parsePagination, parseProductInput, type ProductInput } from '../catalo
 import { recordProductImage } from '../catalog/product-images.service';
 import { listAdminOrders, updateAdminNotes, updateFulfillment } from '../orders/orders.service';
 import { operationalMetrics } from './operations.service';
+import { parseSyncDirection, parseSyncInput } from './catalog-sync.schemas';
+import { listSyncLogs, listSyncProducts, synchronizeProduct } from './catalog-sync.service';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
 const bucket = 'product-images';
@@ -36,6 +38,10 @@ adminRoutes.get('/health', asyncHandler(async (_req, res) => {
   });
 }));
 adminRoutes.get('/metrics', asyncHandler(async (_req, res) => res.json({ metrics: await operationalMetrics() })));
+
+adminRoutes.get('/sync/products', asyncHandler(async (req, res) => res.json(await listSyncProducts(parseSyncDirection(req.query.direction)))));
+adminRoutes.post('/sync/products', asyncHandler(async (req, res) => res.json(await synchronizeProduct(parseSyncInput(req.body), req.auth!.userId))));
+adminRoutes.get('/sync/logs', asyncHandler(async (_req, res) => res.json({ logs: await listSyncLogs() })));
 
 adminRoutes.get('/products', asyncHandler(async (req, res) => res.json({ success: true, ...(await listAdminProducts(parsePagination(req.query))) })));
 adminRoutes.get('/products/:id', asyncHandler(async (req, res) => res.json({ success: true, product: await getAdminProduct(String(req.params.id)) })));
