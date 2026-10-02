@@ -96,6 +96,29 @@ export function resumableCheckoutSessionUrl(session: Pick<Stripe.Checkout.Sessio
   return session.url;
 }
 
+export async function resumeCheckout(orderId: string, userId: string) {
+  const { data: order, error } = await db().from('orders')
+    .select('id,stripe_checkout_session_id,order_status,payment_status')
+    .eq('id', orderId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw new AppError(500, 'ORDER_READ_FAILED', 'Não foi possível consultar o checkout.');
+  if (!order) throw new AppError(404, 'ORDER_NOT_FOUND', 'Pedido não encontrado.');
+
+  assertOrderCanResumeCheckout(order);
+  if (!['requires_payment_method', 'requires_action'].includes(order.payment_status) || !order.stripe_checkout_session_id) {
+    throw new AppError(409, 'CHECKOUT_UNAVAILABLE', 'Este checkout não está disponível para retomada.');
+  }
+
+  const session = await stripe().checkout.sessions.retrieve(order.stripe_checkout_session_id);
+  if (session.status === 'expired') {
+    await db().rpc('release_order_reservation', { p_order_id: order.id, p_reason: 'expired' });
+    throw new AppError(409, 'CHECKOUT_EXPIRED', 'Este checkout expirou. Inicie outro pagamento.');
+  }
+
+  return { orderId: order.id, checkoutUrl: resumableCheckoutSessionUrl(session) };
+}
+
 async function existingCheckout(
   userId: string,
   key: string,

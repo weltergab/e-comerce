@@ -1,4 +1,5 @@
-Esse projeto é um ecomerce localizado em /backend e /frontend_ecomerce
+Esse projeto é um ecomerce localizado em /backend e /frontend_ecomerce .
+É feito com React, Node, Supabase.
 
 Nas alterações de código, atualize também a documentação: "plano.md" e "arquitetura.md". Em caso de alteração pequena não precisa, quero economizar tokens. 
 

@@ -30,3 +30,7 @@ export function getOrderStatus(orderId: string) {
 export function requestPaymentReconciliation(orderId: string) {
   return apiJson<{ queued: boolean }>(`/api/orders/${encodeURIComponent(orderId)}/payment-reconciliation`, { method: 'POST' });
 }
+
+export function resumeOrderPayment(orderId: string) {
+  return apiJson<{ orderId: string; checkoutUrl: string }>(`/api/checkout/${encodeURIComponent(orderId)}/resume`, { method: 'POST' });
+}

@@ -45,5 +45,6 @@ describe('proteções de retomada do checkout', () => {
   it('retorna somente uma sessão Stripe aberta e rejeita sessão concluída', () => {
     expect(resumableCheckoutSessionUrl({ status: 'open', url: 'https://checkout.stripe.com/c/pay/cs_test' })).toBe('https://checkout.stripe.com/c/pay/cs_test');
     expect(errorCode(() => resumableCheckoutSessionUrl({ status: 'complete', url: null }))).toBe('CHECKOUT_ALREADY_COMPLETED');
+    expect(errorCode(() => resumableCheckoutSessionUrl({ status: 'expired', url: null }))).toBe('CHECKOUT_UNAVAILABLE');
   });
 });
