@@ -552,7 +552,7 @@ function ProductModal({
 
 function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
   const defaultForm: IntroductionHeaderContent = {
-    miniText: 'Abacate Shop',
+    miniText: 'Lerium Shop',
     title: 'Produtos escolhidos para simplificar sua rotina',
     subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
     description:
@@ -572,6 +572,7 @@ function IntroductionHeaderModal({ onClose }: { onClose: () => void }) {
           setFormData({
             ...defaultForm,
             ...(data.parameter?.value || {}),
+            miniText: (data.parameter?.value?.miniText || defaultForm.miniText).replace(/Abacate Shop|Storecy/gi, 'Lerium Shop'),
           });
         } else {
           alert(data.error || 'Erro ao carregar frases');

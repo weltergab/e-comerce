@@ -1,4 +1,4 @@
-# Plano de arquitetura e produção do Storecy
+# Plano de arquitetura e produção do Lerium Shop
 
 Revisão baseada no código em **02/10/2026**. Este plano substitui análises da arquitetura antiga e separa o que já está implementado do que ainda depende de engenharia, configuração externa ou validação operacional.
 
@@ -290,7 +290,8 @@ Regras e operação:
 
 ### P1 — confiabilidade e operação
 
-- [ ] Adicionar testes de integração com Postgres e serviços externos isolados.
+- [x] Validar sincronização de catálogo com PostgreSQL isolado em PGlite.
+- [ ] Ampliar integração para demais módulos e serviços externos isolados.
 - [ ] Adicionar E2E das jornadas críticas e teste de concorrência do estoque.
 - [ ] Criar ações administrativas auditadas para replay de evento, reenvio de e-mail e início de reembolso.
 - [ ] Definir dashboards, alertas, SLOs e runbooks de incidentes.
@@ -303,3 +304,14 @@ Regras e operação:
 - [ ] Definir orçamento de bundle, code splitting e métricas de experiência do usuário.
 - [ ] Automatizar verificação de acessibilidade.
 - [ ] Avaliar cálculo real de frete, tributos, nota fiscal, trocas e devoluções somente quando essas regras forem definidas; o comportamento atual de frete grátis não deve mudar implicitamente.
+
+## 7. Trabalho DevOps/QAOps e marca — 15/10/2026
+
+- [x] Parte 1: conferir base/acessos, instalar pelos lockfiles e registrar baseline real (64 testes backend e 17 frontend).
+- [x] Parte 2: caracterização, riscos C01–C10, fichas G1–G4 e decisões resumidas em `docs/devops-qaops/`.
+- [x] Parte 3: validar relatórios, isolamento de credenciais, dependências corrigidas e pipeline com agregador obrigatório.
+- [ ] Parte 4: preservar três commits/runs de aprovação, mutação e correção na branch de trabalho, com evidências reais.
+- [ ] Parte 5: concluir Word, slides, roteiro e CI do HEAD final do PR.
+- [ ] Revisão humana de Gabriel, confirmação do formato individual e acesso do professor ao repositório privado.
+
+A identidade visual passa a Lerium Shop com logo/favicons SVG e marca compartilhada no cabeçalho/rodapé; contratos internos e infraestrutura existente são preservados. Baseline e decisões estão nos documentos do trabalho. Pendências operacionais e de produção anteriores continuam abertas.

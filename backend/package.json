@@ -1,5 +1,5 @@
 {
-  "name": "storecy-backend",
+  "name": "lerium-shop-backend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,8 @@
     "test": "vitest run",
     "check": "npm run build && npm test",
     "catalog:import": "tsx scripts/import-stripe-catalog.ts",
-    "tasks:backfill": "tsx scripts/backfill-background-tasks.ts"
+    "tasks:backfill": "tsx scripts/backfill-background-tasks.ts",
+    "test:ci": "vitest run --reporter=default --reporter=junit --reporter=json --outputFile.junit=reports/junit.xml --outputFile.json=reports/tests.json"
   },
   "dependencies": {
     "@sentry/node": "^11.0.0",
@@ -33,7 +34,7 @@
     "@types/node": "^20",
     "tsx": "^4.20.6",
     "typescript": "5.9.3",
-    "vitest": "3.2.7"
+    "vitest": "4.1.11"
   },
   "overrides": {
     "qs": "^6.16.0"

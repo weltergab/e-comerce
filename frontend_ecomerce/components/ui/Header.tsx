@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Brand } from '@/components/ui/Brand';
 
 function DesktopNavLink({
   to,
@@ -90,10 +91,10 @@ export const Header = () => {
         <div className="flex justify-between items-center h-16">
           <Link
             to="/"
-            className="text-2xl font-extrabold text-green-950 overline"
-            style={{  }}
+            className="text-xl sm:text-2xl"
+            aria-label="Lerium Shop, página inicial"
           >
-            A B A C A T E - Shop
+            <Brand />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-2">

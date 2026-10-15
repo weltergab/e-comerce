@@ -88,6 +88,9 @@ describe('RPC de sincronização no PostgreSQL isolado', () => {
   });
 
   it('não permite acesso direto à auditoria/RPC pelos papéis do navegador', async () => {
-    expect((await database.query("SELECT has_table_privilege('anon','public.catalog_sync_logs','SELECT') AS logs, has_function_privilege('authenticated','public.sync_stripe_catalog_product(jsonb,text,uuid,uuid)','EXECUTE') AS rpc, has_function_privilege('service_role','public.sync_stripe_catalog_product(jsonb,text,uuid,uuid)','EXECUTE') AS backend")).rows[0]).toEqual({ logs: false, rpc: false, backend: true });
+    for (const role of ['anon', 'authenticated']) {
+      expect((await database.query("SELECT has_table_privilege($1,'public.catalog_sync_logs','SELECT') AS logs, has_function_privilege($1,'public.sync_stripe_catalog_product(jsonb,text,uuid,uuid)','EXECUTE') AS rpc", [role])).rows[0]).toEqual({ logs: false, rpc: false });
+    }
+    expect((await database.query("SELECT has_table_privilege('service_role','public.catalog_sync_logs','SELECT,INSERT,UPDATE') AS logs, has_function_privilege('service_role','public.sync_stripe_catalog_product(jsonb,text,uuid,uuid)','EXECUTE') AS rpc")).rows[0]).toEqual({ logs: true, rpc: true });
   });
 });

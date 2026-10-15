@@ -15,7 +15,7 @@ interface IntroductionHeaderContent {
 }
 
 const defaultIntroductionHeader: IntroductionHeaderContent = {
-  miniText: 'Abacate Shop',
+  miniText: 'Lerium Shop',
   title: 'Produtos escolhidos para simplificar sua rotina',
   subtitle: 'Tecnologia, praticidade e compra segura em um só lugar.',
   description:
@@ -35,6 +35,7 @@ export default function Home() {
         setIntroductionHeader({
           ...defaultIntroductionHeader,
           ...(data.parameter?.value || {}),
+          miniText: (data.parameter?.value?.miniText || defaultIntroductionHeader.miniText).replace(/Abacate Shop|Storecy/gi, 'Lerium Shop'),
         });
       } catch (error) {
         console.error('Error loading introduction header:', error);
