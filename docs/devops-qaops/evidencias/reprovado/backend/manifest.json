@@ -1,0 +1,61 @@
+{
+  "project": "backend",
+  "event": "pull_request",
+  "branch": "codex/devops-qaops",
+  "headSha": "58aa628156c9afd49c59c50e590f0a445f1d4c4e",
+  "testedSha": "05a65926d9afc36042a193e68d93e9aba2bff855",
+  "runId": "38753904896",
+  "attempt": "1",
+  "generatedAt": "2026-10-15T14:43:49.041Z",
+  "node": "v22.23.3",
+  "npm": "10.9.9",
+  "stages": {
+    "install": {
+      "command": "npm ci",
+      "start": "2026-10-15T14:43:26.755Z",
+      "end": "2026-10-15T14:43:32.282Z",
+      "durationSeconds": 5.527,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "build": {
+      "command": "npm run build",
+      "start": "2026-10-15T14:43:32.342Z",
+      "end": "2026-10-15T14:43:39.023Z",
+      "durationSeconds": 6.681,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "tests": {
+      "command": "npm run test:ci",
+      "start": "2026-10-15T14:43:39.105Z",
+      "end": "2026-10-15T14:43:47.872Z",
+      "durationSeconds": 8.767,
+      "exitCode": 1,
+      "status": "failure"
+    },
+    "audit-production": {
+      "command": "npm audit --omit=dev --audit-level=high --json",
+      "start": "2026-10-15T14:43:47.942Z",
+      "end": "2026-10-15T14:43:48.441Z",
+      "durationSeconds": 0.499,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "audit-full": {
+      "command": "npm audit --audit-level=high --json",
+      "start": "2026-10-15T14:43:48.505Z",
+      "end": "2026-10-15T14:43:48.975Z",
+      "durationSeconds": 0.47,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "reports": {
+      "status": "skipped",
+      "reason": "Consultar pré-requisitos, cancelamento ou logs do job."
+    }
+  },
+  "tests": {
+    "diagnostic": "G3: suíte ausente, falha ou teste obrigatório não executado."
+  }
+}

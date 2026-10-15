@@ -18,4 +18,13 @@ Trocar somente `source.stock - target.stock` por `source.stock + target.stock` e
 
 Após confirmar o nome real do check `quality-gate`, a API aceitou a proteção da main com check obrigatório/strict, aplicação também a administradores, force push e exclusão desabilitados. Não se exige aprovação de um segundo integrante. Exclusão automática após merge já estava desabilitada. O repositório permanece privado; acesso do professor ainda precisa de confirmação de Gabriel. Evidência sanitizada em `evidencias/protecao.json`.
 
-Reprovação e recuperação serão registradas após suas execuções concluírem; a aprovação inicial não prova o resultado dos commits seguintes.
+## Reprovação controlada
+
+- Commit `58aa628156c9afd49c59c50e590f0a445f1d4c4e`, alterando a subtração para soma sem alterar as expectativas dos testes.
+- [Run 38753904896, tentativa 1](https://github.com/weltergab/e-comerce/actions/runs/38753904896): backend e quality-gate falharam, frontend aprovado.
+- C01 exigiu diferença 4 e recebeu 8; o teste de vínculo do serviço exigiu -4 e recebeu 8, somando duas falhas reais no backend.
+- G1, G2 e G4 aprovados; G3 backend reprovado; verificação de relatórios desse job foi skipped porque testes falharam, enquanto manifestos, JUnit/JSON e ambos os artefatos foram preservados.
+- GitHub informou `mergeable_state: blocked`, apesar de `mergeable: true` (sem conflito textual); evidência em `evidencias/reprovado/merge-status.json`.
+- Risco demonstrado: informação incorreta de divergência induziria decisão administrativa inadequada; nenhum provedor real recebeu escrita no experimento.
+
+A correção restaura a subtração em novo commit. O código do cálculo volta a ser idêntico à versão aprovada, mantendo os testes e gates. A recuperação só será considerada concluída após o CI desse novo estado.
