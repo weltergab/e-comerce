@@ -3,7 +3,9 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-export function validateReports(directory) {
+const requiredSuites = JSON.parse(readFileSync(new URL('./required-test-suites.json', import.meta.url), 'utf8'));
+
+export function validateReports(directory, mandatoryFiles = requiredSuites[basename(directory)] || []) {
   const json = JSON.parse(readFileSync(resolve(directory, 'reports/tests.json'), 'utf8'));
   const xml = readFileSync(resolve(directory, 'reports/junit.xml'), 'utf8');
   const required = [];
@@ -16,6 +18,9 @@ export function validateReports(directory) {
     }
   }
   discover(directory);
+  for (const file of mandatoryFiles) {
+    if (!required.includes(file)) throw new Error(`G3: suíte obrigatória removida: ${file}`);
+  }
   if (!required.length || !json.success || !json.numTotalTests || json.numFailedTests || json.numPendingTests || json.numTodoTests) {
     throw new Error('G3: suíte ausente, falha ou teste obrigatório não executado.');
   }

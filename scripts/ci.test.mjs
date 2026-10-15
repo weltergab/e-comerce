@@ -1,12 +1,18 @@
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { qualityDecision, validateReports } from './ci.mjs';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+
+function cleanup(directory) {
+  assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
+  assert.match(basename(directory), /^lerium-(exit|ci)-/);
+  rmSync(directory, { recursive: true, force: true });
+}
 
 test('comando obrigatório preserva exit code, logs e diagnóstico após falha', () => {
   const dir = mkdtempSync(join(tmpdir(), 'lerium-exit-'));
@@ -16,7 +22,7 @@ test('comando obrigatório preserva exit code, logs e diagnóstico após falha',
     assert.equal(result.status, 7);
     assert.equal(JSON.parse(readFileSync(join(dir, 'reports/build-step.json'))).exitCode, 7);
     assert.match(readFileSync(join(dir, 'reports/build.log'), 'utf8'), /falha controlada/);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { cleanup(dir); }
 });
 
 test('agregador exige os dois jobs e rejeita falha, cancelamento, skip e ausência', () => {
@@ -38,10 +44,11 @@ test('relatórios exigem todas as suítes, JUnit coerente e nenhum caso ignorado
     assert.throws(() => validateReports(dir));
     writeFileSync(join(dir, 'reports/junit.xml'), '<testsuites tests="1" failures="0" errors="0"></testsuites>');
     assert.equal(validateReports(dir).tests, 1);
+    assert.throws(() => validateReports(dir, ['integration-sql.test.ts']), /suíte obrigatória removida/);
     data.numPendingTests = 1; save();
     assert.throws(() => validateReports(dir), /G3/);
     data.numPendingTests = 0; save();
     writeFileSync(join(dir, 'missing.test.ts'), '');
     assert.throws(() => validateReports(dir), /arquivo obrigatório ausente/);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { cleanup(dir); }
 });

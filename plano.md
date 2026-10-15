@@ -310,8 +310,10 @@ Regras e operação:
 - [x] Parte 1: conferir base/acessos, instalar pelos lockfiles e registrar baseline real (64 testes backend e 17 frontend).
 - [x] Parte 2: caracterização, riscos C01–C10, fichas G1–G4 e decisões resumidas em `docs/devops-qaops/`.
 - [x] Parte 3: validar relatórios, isolamento de credenciais, dependências corrigidas e pipeline com agregador obrigatório.
-- [ ] Parte 4: preservar três commits/runs de aprovação, mutação e correção na branch de trabalho, com evidências reais.
-- [ ] Parte 5: concluir Word, slides, roteiro e CI do HEAD final do PR.
+- [x] Parte 4: preservar três commits/runs de aprovação, mutação e correção na branch de trabalho, com evidências reais.
+- [x] Parte 5: produzir Word de 8 páginas, 10 slides editáveis e roteiro estimado de 11 minutos, revisados tecnicamente.
 - [ ] Revisão humana de Gabriel, confirmação do formato individual e acesso do professor ao repositório privado.
 
 A identidade visual passa a Lerium Shop com logo/favicons SVG e marca compartilhada no cabeçalho/rodapé; contratos internos e infraestrutura existente são preservados. Baseline e decisões estão nos documentos do trabalho. Pendências operacionais e de produção anteriores continuam abertas.
+
+Execuções reais preservadas: aprovado `38753499480` (48 s), reprovado `38753904896` (47 s) e corrigido `38754195324` (46 s), no PR #9. A mutação foi removida por novo commit, mantendo 64 + 17 testes e quatro auditorias sem vulnerabilidades. A main exige o check real `quality-gate`, inclusive para administradores, com force push/exclusão proibidos. O HEAD final da entrega deve receber seu próprio CI; o resultado atual pode ser consultado no PR. Revisão humana, ensaio e acesso do professor permanecem separados das verificações técnicas.

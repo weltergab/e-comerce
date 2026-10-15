@@ -17,3 +17,10 @@
 - D15: Exigir quality-gate na main inclusive para administradores, sem revisão fictícia por segundo integrante, com force push/exclusão proibidos.
 - D16: Preservar o repositório privado e deixar a confirmação do acesso do professor para Gabriel, sem enviar convites.
 - D17: Resolver o erro do npm ao migrar a árvore com npm 11.6.2 e reconciliar o lockfile com npm 10.9.4, validando a instalação final por npm ci.
+- D18: Usar a cor de contraste primaryText na logo para manter o símbolo visível quando o tema tem superfície transparente.
+- D19: Manter inventário explícito das 16 suítes obrigatórias para impedir aprovação se um arquivo de teste crítico for removido.
+- D20: Renderizar capturas locais claramente identificadas a partir da API/artefatos oficiais, pois o navegador está sem sessão no repositório privado.
+- D21: Usar o motor Word instalado para revisar as oito páginas após o renderer padrão falhar por ausência de LibreOffice, sem instalar outro editor.
+- D22: Produzir 10 slides com tabelas/diagramas editáveis e roteiro de 11 minutos, deixando revisão e ensaio humanos pendentes.
+- D23: Registrar o GET 200 da página pública e os redirecionamentos de deploy/health para login sem chamá-los de validação da API.
+- D24: Demonstrar novos gatilhos, se necessário na defesa, com alteração documental na branch de trabalho, preservando os três experimentos históricos.

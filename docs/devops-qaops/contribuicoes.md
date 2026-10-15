@@ -22,3 +22,10 @@ O enunciado pede dupla e commits de ambos. O roteiro fornecido solicita execuç�
 - [ ] Confirmar acesso do professor ao repositório privado e resultados, sem compartilhar segredos.
 
 A IA verifica código, arquivos e evidências técnicas; nenhum item de revisão humana é assinado por ela. URLs dos commits e PR constam em experimentos.md e no histórico da branch.
+
+## Histórico identificável
+
+- `d2eee6d`: gates, relatórios, isolamento, correções de dependências e marca Lerium Shop.
+- `58aa628`: mutação controlada de diferença de estoque e registro da aprovação anterior.
+- `1c566db`: restauração da subtração e preservação da reprovação com seu bloqueio real.
+- O commit final do PR #9 reúne materiais, conferência visual e inventário obrigatório de suítes; seu check deve corresponder ao HEAD atual.
