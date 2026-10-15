@@ -60,7 +60,7 @@ export function compareSyncProduct(source: SyncProduct, target: SyncProduct | nu
     source,
     target,
     existsInTarget: target !== null,
-    stockDifference: target && source.stock !== null && target.stock !== null ? source.stock - target.stock : null,
+    stockDifference: target && source.stock !== null && target.stock !== null ? source.stock + target.stock : null,
     priceDifference: target && source.price !== null && target.price !== null && source.currency === target.currency ? Math.round((source.price - target.price) * 100) / 100 : null,
     stockMismatch: Boolean(target && (source.stockIssue || target.stockIssue || source.stock === null || target.stock === null || source.stock !== target.stock)),
     priceMismatch: Boolean(target && (source.priceIssue || target.priceIssue || source.currency !== target.currency || source.price !== target.price || source.priceId !== target.priceId)),

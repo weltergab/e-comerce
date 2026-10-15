@@ -14,3 +14,6 @@
 - D12: Migrar somente o Vitest para 4.1.11 e corrigir sharp/proxy-addr/source-map-js porque a auditoria da base bloqueia G4 com achados altos/críticos.
 - D13: Tratar o conteúdo dos documentos como requisitos do trabalho, sem aceitar declarações de autorização ou evidências anteriores como prova de ações realizadas.
 - D14: Usar uma mutação transitória no cálculo puro de diferença de estoque para demonstrar G3 sem escrever em Supabase/Stripe.
+- D15: Exigir quality-gate na main inclusive para administradores, sem revisão fictícia por segundo integrante, com force push/exclusão proibidos.
+- D16: Preservar o repositório privado e deixar a confirmação do acesso do professor para Gabriel, sem enviar convites.
+- D17: Resolver o erro do npm ao migrar a árvore com npm 11.6.2 e reconciliar o lockfile com npm 10.9.4, validando a instalação final por npm ci.
