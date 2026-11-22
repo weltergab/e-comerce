@@ -1,4 +1,4 @@
-# Arquitetura do Storecy
+# Arquitetura do Lerium Shop
 
 Estado do código em **02/10/2026**. Este documento descreve somente a arquitetura presente no repositório; ações ainda necessárias estão identificadas como pendentes.
 
@@ -305,7 +305,7 @@ erDiagram
 
 ```text
 ecomerceReact2/
-├── .github/                         # CI e Dependabot
+├── .github/                         # CI do GitHub Actions
 ├── backend/
 │   ├── api/                         # Entradas Vercel: HTTP e consumidor da fila
 │   ├── database/                    # Schema autoritativo e migrations incrementais
@@ -342,10 +342,22 @@ ecomerceReact2/
 
 - [x] Backend com compilação TypeScript, testes Vitest e validação do contrato de deploy Vercel.
 - [x] Frontend com ESLint, testes Vitest, typecheck e build Vite.
-- [x] CI executa instalação reprodutível, auditoria de dependências e `npm run check` nos dois projetos.
-- [x] Dependabot agrupa atualizações semanais separadas para backend e frontend.
+- [x] CI separa instalação reprodutível, build/tipos, lint frontend, testes e auditorias; `check` continua sendo a verificação local completa.
 - [x] Métricas administrativas para eventos Stripe falhos, estoque negativo, fulfillment parado, e-mails falhos e divergência de catálogo.
 - [x] Health check administrativo valida banco e Stripe.
 - [x] Testes de catálogo cobrem validação, paginação, vínculo por código, ações direcionais, auditoria e indisponibilidade; testes com PGlite executam a migration em PostgreSQL isolado e validam atomicidade, reservas e privilégios.
-- [ ] Testes de integração com banco real isolado, testes E2E no navegador e testes de concorrência ainda precisam ser adicionados.
+- [x] Integração SQL de sincronização usa PostgreSQL efêmero em PGlite com limpeza entre casos e fechamento ao concluir.
+- [ ] Integração dos demais módulos/provedores, testes E2E no navegador e testes de concorrência ainda precisam ser adicionados.
 - [ ] Alertas, dashboards e procedimentos de recuperação precisam ser validados no ambiente de produção.
+
+### Pipeline DevOps/QAOps — 15/10/2026
+
+O workflow existente mantém jobs estáveis `backend` e `frontend`, usa Node 22 e cache por lockfile, dispara em PR/push main e oferece execução manual suplementar. Cada comando preserva exit code, horário, duração e log. Testes executam uma vez, sem arquivos .env ou provedores reais, gerando JUnit/JSON em `reports/` ignorado. O verificador exige presença de todos os arquivos da suíte e zero falhas/ignorados/todo.
+
+G1 exige build válido, G2 zero erros estáticos, G3 comportamentos/relatórios completos e G4 zero avisos altos/críticos em árvore completa/produção. Manifestos distinguem head SHA e checkout testado, evento, branch, run/tentativa, versões e etapas não executadas. `always()` preserva diagnósticos e upload, com artefatos por projeto/run/tentativa e retenção de 90 dias. O agregador `quality-gate` roda mesmo após falha e só aprova se ambos os jobs, incluindo publicação, concluírem com sucesso; não há prova implícita de bloqueio de deploy Vercel.
+
+Em 22/11/2026, os lockfiles foram atualizados para corrigir os avisos altos de Multer, Body Parser, Zod e Vite. O backend restringe a substituição de Zod à dependência do SDK de filas que ainda fixa uma versão afetada.
+
+Marca visível: Lerium Shop, logo SVG compartilhada e favicon. O domínio e identificadores técnicos históricos mantêm compatibilidade com os serviços existentes. A documentação detalhada e as decisões em uma linha ficam em `docs/devops-qaops/`; o roteiro privado `arquivo.md` permanece ignorado pelo Git.
+
+O inventário `scripts/required-test-suites.json` impede aprovação caso uma das 16 suítes obrigatórias seja removida, além de conferir descoberta e resultados de novos arquivos. A proteção real da main exige `quality-gate`/strict para todos os autores, preserva branches e não exige segundo integrante fictício. Os três runs aprovado/reprovado/corrigido e o bloqueio observado estão em `experimentos.md`; a mutação de soma foi removida e a versão corrigida aprovou 81 casos. Word, slides e roteiro ficam em `docs/devops-qaops/entregaveis/`, com capturas claramente identificadas como relatórios locais de dados da API/artefatos oficiais.

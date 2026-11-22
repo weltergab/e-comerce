@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="64" failures="2" errors="0" time="4.525340952">
+    <testsuite name="tests/contract/catalog-sync.database.test.ts" timestamp="2026-10-15T14:43:47.821Z" hostname="runnervmmprz5" tests="8" failures="0" errors="0" skipped="0" time="4.392703461">
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; permite reaplicar a migration sem apagar produtos existentes" time="0.052225695">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; importa produto, preço, estoque e movimento atomicamente e repetições não duplicam" time="0.050212377">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; define saldo disponível sem apagar reservas, altera só estoque e usa o vínculo Stripe" time="0.053969645">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; aceita zero disponível com reservas e não cria movimentos de quantidade zero" time="0.028245583">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; atualiza somente valor e Price sem exigir estoque" time="0.023917355">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; sincronização completa atualiza detalhes, valor e estoque do mesmo produto" time="0.0243047">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; falha de estoque desfaz também a importação do produto e rejeita atualizações sem destino" time="0.020732388">
+        </testcase>
+        <testcase classname="tests/contract/catalog-sync.database.test.ts" name="RPC de sincronização no PostgreSQL isolado &gt; não permite acesso direto à auditoria/RPC pelos papéis do navegador" time="0.015346755">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/contract/checkout.contract.test.ts" timestamp="2026-10-15T14:43:47.825Z" hostname="runnervmmprz5" tests="1" failures="0" errors="0" skipped="0" time="0.004326336">
+        <testcase classname="tests/contract/checkout.contract.test.ts" name="contrato manual do checkout &gt; mantém o DTO do frontend compatível com o parser do backend" time="0.002748877">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/addresses.schemas.test.ts" timestamp="2026-10-15T14:43:47.825Z" hostname="runnervmmprz5" tests="3" failures="0" errors="0" skipped="0" time="0.005816912">
+        <testcase classname="tests/unit/addresses.schemas.test.ts" name="endereços salvos &gt; normaliza CEP e UF e preserva a escolha de principal" time="0.002478672">
+        </testcase>
+        <testcase classname="tests/unit/addresses.schemas.test.ts" name="endereços salvos &gt; rejeita campos inesperados e identificadores inválidos" time="0.00134317">
+        </testcase>
+        <testcase classname="tests/unit/addresses.schemas.test.ts" name="endereços salvos &gt; aceita um UUID de endereço" time="0.000375482">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/auth-session.test.ts" timestamp="2026-10-15T14:43:47.826Z" hostname="runnervmmprz5" tests="6" failures="0" errors="0" skipped="0" time="0.01186324">
+        <testcase classname="tests/unit/auth-session.test.ts" name="sessão persistente &gt; mantém uma expiração absoluta de uma hora" time="0.005795491">
+        </testcase>
+        <testcase classname="tests/unit/auth-session.test.ts" name="sessão persistente &gt; limita sessões antigas de 30 dias a uma hora desde a emissão" time="0.000359121">
+        </testcase>
+        <testcase classname="tests/unit/auth-session.test.ts" name="sessão persistente &gt; cria cookie de produção persistente, HttpOnly e apto a contexto entre sites" time="0.000618025">
+        </testcase>
+        <testcase classname="tests/unit/auth-session.test.ts" name="sessão persistente &gt; limpa o cookie com os mesmos atributos usados em produção" time="0.000205775">
+        </testcase>
+        <testcase classname="tests/unit/auth-session.test.ts" name="sessão persistente &gt; lê cookie codificado sem aceitar nomes parciais" time="0.000249266">
+        </testcase>
+        <testcase classname="tests/unit/auth-session.test.ts" name="sessão persistente &gt; trata somente rotações recentes como concorrentes" time="0.000269124">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/background-tasks.test.ts" timestamp="2026-10-15T14:43:47.829Z" hostname="runnervmmprz5" tests="3" failures="0" errors="0" skipped="0" time="0.006359245">
+        <testcase classname="tests/unit/background-tasks.test.ts" name="background tasks &gt; valida mensagens antes de executar efeitos externos" time="0.003012099">
+        </testcase>
+        <testcase classname="tests/unit/background-tasks.test.ts" name="background tasks &gt; gera chaves de idempotência estáveis e distintas" time="0.001060371">
+        </testcase>
+        <testcase classname="tests/unit/background-tasks.test.ts" name="background tasks &gt; entrega prazos curtos no horário e divide retenções longas em checkpoints" time="0.000527836">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/catalog-sync.schemas.test.ts" timestamp="2026-10-15T14:43:47.831Z" hostname="runnervmmprz5" tests="12" failures="1" errors="0" skipped="0" time="0.023994269">
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="comparação de catálogo &gt; compara preço em centavos e estoque disponível e detecta o vínculo de preço" time="0.01355855">
+            <failure message="expected { …(7) } to match object { existsInTarget: true, …(4) }
+(30 matching properties omitted from actual)" type="AssertionError">
+AssertionError: expected { …(7) } to match object { existsInTarget: true, …(4) }
+(30 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    &quot;existsInTarget&quot;: true,
+    &quot;priceDifference&quot;: 0.1,
+    &quot;priceMismatch&quot;: true,
+-   &quot;stockDifference&quot;: 4,
++   &quot;stockDifference&quot;: 8,
+    &quot;stockMismatch&quot;: true,
+  }
+
+ ❯ tests/unit/catalog-sync.schemas.test.ts:12:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="comparação de catálogo &gt; sinaliza ausência de destino e moedas ou metadados incompatíveis" time="0.000865399">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido (undefined) em zero" time="0.000696021">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido () em zero" time="0.000579384">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido ( ) em zero" time="0.00025628">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido (-1) em zero" time="0.000239948">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido (1.5) em zero" time="0.000367718">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido (10abc) em zero" time="0.000293269">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido (Infinity) em zero" time="0.000650557">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; não converte estoque ausente ou inválido (1000001) em zero" time="0.000284382">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; permite estoque zero e não exige preço para atualizar só estoque" time="0.00193545">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.schemas.test.ts" name="validação de sincronização &gt; recusa direção, ação, lote e código inválidos" time="0.001458798">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/catalog-sync.service.test.ts" timestamp="2026-10-15T14:43:47.836Z" hostname="runnervmmprz5" tests="9" failures="1" errors="0" skipped="0" time="0.046851851">
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; vincula pelo código Stripe mesmo que o ID local e o nome sejam diferentes" time="0.021605546">
+            <failure message="expected { …(7) } to match object { existsInTarget: true, …(4) }
+(2 matching properties omitted from actual)" type="AssertionError">
+AssertionError: expected { …(7) } to match object { existsInTarget: true, …(4) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,10 +2,10 @@
+    &quot;existsInTarget&quot;: true,
+    &quot;priceDifference&quot;: -5,
+    &quot;source&quot;: {
+      &quot;id&quot;: &quot;prod_1&quot;,
+    },
+-   &quot;stockDifference&quot;: -4,
++   &quot;stockDifference&quot;: 8,
+    &quot;target&quot;: {
+      &quot;id&quot;: &quot;local_1&quot;,
+    },
+  }
+
+ ❯ tests/unit/catalog-sync.service.test.ts:72:32
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; busca todas as páginas do Supabase em vez de parar em 500 produtos" time="0.009867329">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; Stripe → Supabase atualiza só estoque pela RPC e registra antes/depois e autor" time="0.003734843">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; Supabase → Stripe envia somente estoque e preserva os dados locais" time="0.002023603">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; cria Price e atualiza o vínculo sem alterar estoque ao enviar só valor" time="0.001626541">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; importa produto ausente no Stripe usando exatamente seu código e preço padrão" time="0.001370392">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; importar produto já cadastrado é auditado sem sobrescrever o destino" time="0.000645477">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; bloqueia estoque ausente e registra a falha, mas permite importar só preço" time="0.001781952">
+        </testcase>
+        <testcase classname="tests/unit/catalog-sync.service.test.ts" name="sincronização auditada de catálogo &gt; não escreve se não conseguir salvar auditoria e não trata falha de conexão como produto ausente" time="0.001436125">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/checkout.schemas.test.ts" timestamp="2026-10-15T14:43:47.840Z" hostname="runnervmmprz5" tests="11" failures="0" errors="0" skipped="0" time="0.009282659">
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; aceita apenas intenção de compra e endereço" time="0.002603936">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita quantidade inválida 0" time="0.001079096">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita quantidade inválida -1" time="0.000243355">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita quantidade inválida 1.5" time="0.000232825">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita quantidade inválida 21" time="0.000279071">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita quantidade inválida 2" time="0.000227415">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita preço e Stripe Price enviados pelo cliente" time="0.000333032">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita produtos duplicados" time="0.000354282">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; exige chave de idempotência" time="0.000798603">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; aceita a seleção de um endereço salvo sem receber outro endereço" time="0.000364692">
+        </testcase>
+        <testcase classname="tests/unit/checkout.schemas.test.ts" name="parseCheckout &gt; rejeita endereço salvo e endereço avulso simultâneos" time="0.000452185">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/checkout.service.test.ts" timestamp="2026-10-15T14:43:47.842Z" hostname="runnervmmprz5" tests="3" failures="0" errors="0" skipped="0" time="0.005872784">
+        <testcase classname="tests/unit/checkout.service.test.ts" name="proteções de retomada do checkout &gt; só reaproveita a chave para o mesmo carrinho e endereço" time="0.002490078">
+        </testcase>
+        <testcase classname="tests/unit/checkout.service.test.ts" name="proteções de retomada do checkout &gt; nunca retoma como pagamento uma tentativa já paga ou reembolsada" time="0.00066845">
+        </testcase>
+        <testcase classname="tests/unit/checkout.service.test.ts" name="proteções de retomada do checkout &gt; retorna somente uma sessão Stripe aberta e rejeita sessão concluída" time="0.000498442">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/env.test.ts" timestamp="2026-10-15T14:43:47.843Z" hostname="runnervmmprz5" tests="3" failures="0" errors="0" skipped="0" time="0.007186611">
+        <testcase classname="tests/unit/env.test.ts" name="frontend e CORS por ambiente &gt; usa o domínio oficial quando FRONTEND_URL não existe em produção" time="0.002668748">
+        </testcase>
+        <testcase classname="tests/unit/env.test.ts" name="frontend e CORS por ambiente &gt; sempre permite o frontend oficial em produção e normaliza origens adicionais" time="0.00127899">
+        </testcase>
+        <testcase classname="tests/unit/env.test.ts" name="frontend e CORS por ambiente &gt; mantém localhost restrito ao desenvolvimento" time="0.000369161">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/payment-events.test.ts" timestamp="2026-10-15T14:43:47.844Z" hostname="runnervmmprz5" tests="3" failures="0" errors="0" skipped="0" time="0.004550735">
+        <testcase classname="tests/unit/payment-events.test.ts" name="paymentStatus &gt; normaliza eventos terminais sem confiar no status genérico" time="0.002072283">
+        </testcase>
+        <testcase classname="tests/unit/payment-events.test.ts" name="isMissingStripeEventOrderId &gt; reconhece schemas antigos do Postgres e do cache PostgREST" time="0.000591274">
+        </testcase>
+        <testcase classname="tests/unit/payment-events.test.ts" name="isMissingStripeEventOrderId &gt; não oculta outros erros de banco" time="0.000209422">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/stripe-payment-methods.test.ts" timestamp="2026-10-15T14:43:47.846Z" hostname="runnervmmprz5" tests="2" failures="0" errors="0" skipped="0" time="0.006532849">
+        <testcase classname="tests/unit/stripe-payment-methods.test.ts" name="checkout payment methods &gt; sempre oferece cartão e inclui Pix apenas quando disponível na configuração padrão" time="0.003430491">
+        </testcase>
+        <testcase classname="tests/unit/stripe-payment-methods.test.ts" name="checkout payment methods &gt; ignora Pix de configuração inativa ou que não seja a padrão" time="0.000478164">
+        </testcase>
+    </testsuite>
+</testsuites>

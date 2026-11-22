@@ -1,4 +1,4 @@
-# Plano de arquitetura e produção do Storecy
+# Plano de arquitetura e produção do Lerium Shop
 
 Revisão baseada no código em **02/10/2026**. Este plano substitui análises da arquitetura antiga e separa o que já está implementado do que ainda depende de engenharia, configuração externa ou validação operacional.
 
@@ -144,7 +144,7 @@ Marcar um item como implementado significa que o comportamento existe no código
 - [x] Backend com TypeScript, testes Vitest e validação da configuração de deploy.
 - [x] Frontend com TypeScript, ESLint, Vitest e build Vite.
 - [x] CI para backend e frontend com `npm ci`, auditoria e `npm run check`.
-- [x] Dependabot semanal separado por projeto.
+- [x] Removida a configuração de atualizações semanais do Dependabot.
 - [x] Testes unitários para tarefas, validação, pagamentos e contratos essenciais de checkout.
 - [x] Testes de frontend para autenticação e apresentação de status do pedido.
 - [ ] Banco efêmero ou isolado em testes de integração.
@@ -290,7 +290,8 @@ Regras e operação:
 
 ### P1 — confiabilidade e operação
 
-- [ ] Adicionar testes de integração com Postgres e serviços externos isolados.
+- [x] Validar sincronização de catálogo com PostgreSQL isolado em PGlite.
+- [ ] Ampliar integração para demais módulos e serviços externos isolados.
 - [ ] Adicionar E2E das jornadas críticas e teste de concorrência do estoque.
 - [ ] Criar ações administrativas auditadas para replay de evento, reenvio de e-mail e início de reembolso.
 - [ ] Definir dashboards, alertas, SLOs e runbooks de incidentes.
@@ -303,3 +304,17 @@ Regras e operação:
 - [ ] Definir orçamento de bundle, code splitting e métricas de experiência do usuário.
 - [ ] Automatizar verificação de acessibilidade.
 - [ ] Avaliar cálculo real de frete, tributos, nota fiscal, trocas e devoluções somente quando essas regras forem definidas; o comportamento atual de frete grátis não deve mudar implicitamente.
+
+## 7. Trabalho DevOps/QAOps e marca — 15/10/2026
+
+- [x] Parte 1: conferir base/acessos, instalar pelos lockfiles e registrar baseline real (64 testes backend e 17 frontend).
+- [x] Parte 2: caracterização, riscos C01–C10, fichas G1–G4 e decisões resumidas em `docs/devops-qaops/`.
+- [x] Parte 3: validar relatórios, isolamento de credenciais, dependências corrigidas e pipeline com agregador obrigatório.
+- [x] Parte 4: preservar três commits/runs de aprovação, mutação e correção na branch de trabalho, com evidências reais.
+- [x] Parte 5: produzir Word de 8 páginas, 10 slides editáveis e roteiro estimado de 11 minutos, revisados tecnicamente.
+- [x] Parte 6: atualizar dependências sinalizadas pela auditoria do PR #9 antes da integração na main.
+- [ ] Revisão humana de Gabriel, confirmação do formato individual e acesso do professor ao repositório privado.
+
+A identidade visual passa a Lerium Shop com logo/favicons SVG e marca compartilhada no cabeçalho/rodapé; contratos internos e infraestrutura existente são preservados. Baseline e decisões estão nos documentos do trabalho. Pendências operacionais e de produção anteriores continuam abertas.
+
+Execuções reais preservadas: aprovado `38753499480` (48 s), reprovado `38753904896` (47 s) e corrigido `38754195324` (46 s), no PR #9. A mutação foi removida por novo commit, mantendo 64 + 17 testes e quatro auditorias sem vulnerabilidades. A main exige o check real `quality-gate`, inclusive para administradores, com force push/exclusão proibidos. O HEAD final da entrega deve receber seu próprio CI; o resultado atual pode ser consultado no PR. Revisão humana, ensaio e acesso do professor permanecem separados das verificações técnicas.

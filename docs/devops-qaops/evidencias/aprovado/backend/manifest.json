@@ -1,0 +1,64 @@
+{
+  "project": "backend",
+  "event": "pull_request",
+  "branch": "codex/devops-qaops",
+  "headSha": "d2eee6df55c43e0c043d30decbba20da9d086419",
+  "testedSha": "2692d500c1d649e7df8a4b44c903dbcecfc440a1",
+  "runId": "38753499480",
+  "attempt": "1",
+  "generatedAt": "2026-10-15T14:41:04.707Z",
+  "node": "v22.23.3",
+  "npm": "10.9.9",
+  "stages": {
+    "install": {
+      "command": "npm ci",
+      "start": "2026-10-15T14:40:39.615Z",
+      "end": "2026-10-15T14:40:47.711Z",
+      "durationSeconds": 8.096,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "build": {
+      "command": "npm run build",
+      "start": "2026-10-15T14:40:47.770Z",
+      "end": "2026-10-15T14:40:55.554Z",
+      "durationSeconds": 7.784,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "tests": {
+      "command": "npm run test:ci",
+      "start": "2026-10-15T14:40:55.644Z",
+      "end": "2026-10-15T14:41:03.444Z",
+      "durationSeconds": 7.8,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "audit-production": {
+      "command": "npm audit --omit=dev --audit-level=high --json",
+      "start": "2026-10-15T14:41:03.527Z",
+      "end": "2026-10-15T14:41:04.032Z",
+      "durationSeconds": 0.505,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "audit-full": {
+      "command": "npm audit --audit-level=high --json",
+      "start": "2026-10-15T14:41:04.096Z",
+      "end": "2026-10-15T14:41:04.570Z",
+      "durationSeconds": 0.474,
+      "exitCode": 0,
+      "status": "success"
+    },
+    "reports": {
+      "status": "success",
+      "reason": "Etapa concluída pelo workflow."
+    }
+  },
+  "tests": {
+    "tests": 64,
+    "files": 12,
+    "failed": 0,
+    "skipped": 0
+  }
+}

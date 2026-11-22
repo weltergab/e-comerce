@@ -4,38 +4,153 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   backend:
+    name: backend
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout completo
+        uses: actions/checkout@v4
+      - name: Node e cache
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '22'
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
-      - run: npm audit --audit-level=high
-      - run: npm run check
+      - name: Instalação reproduzível
+        id: install
+        run: node ../scripts/ci.mjs run install npm ci
+      - name: G1 Build e validação
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run build npm run build
+      - name: G3 Testes unitários e integração
+        id: tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run tests npm run test:ci
+      - name: G4 Auditoria de produção
+        id: audit-production
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run audit-production npm audit --omit=dev --audit-level=high --json
+      - name: G4 Auditoria completa
+        id: audit-full
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run audit-full npm audit --audit-level=high --json
+      - name: Validar presença e conteúdo dos relatórios
+        id: reports
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        run: node ../scripts/ci.mjs verify
+      - name: Manifesto e resumo mesmo após falha
+        if: always()
+        env:
+          STEP_RESULTS: ${{ toJSON(steps) }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: node ../scripts/ci.mjs finalize
+      - name: Publicar evidências obrigatórias
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ github.workspace }}/backend/reports/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Link do artefato
+        if: ${{ always() && steps.artifact.outcome == 'success' }}
+        env:
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\n[Artefato backend](' + process.env.ARTIFACT_URL + ')\n')"
 
   frontend:
+    name: frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend_ecomerce
     steps:
+      - name: Checkout completo
+        uses: actions/checkout@v4
+      - name: Node e cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend_ecomerce/package-lock.json
+      - name: Instalação reproduzível
+        id: install
+        run: node ../scripts/ci.mjs run install npm ci
+      - name: G1 Build e validação
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run build npm run build
+      - name: G2 Análise estática
+        id: lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run lint npm run lint
+      - name: G3 Testes unitários e integração
+        id: tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run tests npm run test:ci
+      - name: G4 Auditoria de produção
+        id: audit-production
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run audit-production npm audit --omit=dev --audit-level=high --json
+      - name: G4 Auditoria completa
+        id: audit-full
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node ../scripts/ci.mjs run audit-full npm audit --audit-level=high --json
+      - name: Validar presença e conteúdo dos relatórios
+        id: reports
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        run: node ../scripts/ci.mjs verify
+      - name: Manifesto e resumo mesmo após falha
+        if: always()
+        env:
+          STEP_RESULTS: ${{ toJSON(steps) }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: node ../scripts/ci.mjs finalize
+      - name: Publicar evidências obrigatórias
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ github.workspace }}/frontend_ecomerce/reports/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Link do artefato
+        if: ${{ always() && steps.artifact.outcome == 'success' }}
+        env:
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\n[Artefato frontend](' + process.env.ARTIFACT_URL + ')\n')"
+
+  quality-gate:
+    name: quality-gate
+    needs: [backend, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend_ecomerce/package-lock.json
-      - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
-      - run: npm audit --audit-level=high
-      - run: npm run check
+          node-version: '22'
+      - name: Verificar regras do agregador e dos relatórios
+        run: node --test scripts/ci.test.mjs
+      - name: Decisão obrigatória
+        if: always()
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/ci.mjs decide

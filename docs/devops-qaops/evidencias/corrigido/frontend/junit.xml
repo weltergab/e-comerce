@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="17" failures="0" errors="0" time="0.064283827">
+    <testsuite name="components/order/OrderStatusBadge.test.ts" timestamp="2026-10-15T14:45:41.866Z" hostname="runnervm8k3b6" tests="5" failures="0" errors="0" skipped="0" time="0.006045664">
+        <testcase classname="components/order/OrderStatusBadge.test.ts" name="paymentStatusPresentation &gt; apresenta succeeded como Pago" time="0.002384673">
+        </testcase>
+        <testcase classname="components/order/OrderStatusBadge.test.ts" name="paymentStatusPresentation &gt; apresenta processing como Aguardando Pagamento" time="0.000306764">
+        </testcase>
+        <testcase classname="components/order/OrderStatusBadge.test.ts" name="paymentStatusPresentation &gt; apresenta failed como Falhou" time="0.000228938">
+        </testcase>
+        <testcase classname="components/order/OrderStatusBadge.test.ts" name="paymentStatusPresentation &gt; apresenta canceled como Cancelado" time="0.000283221">
+        </testcase>
+        <testcase classname="components/order/OrderStatusBadge.test.ts" name="paymentStatusPresentation &gt; apresenta refunded como Reembolsado" time="0.000223589">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/MyOrders.test.ts" timestamp="2026-10-15T14:45:41.868Z" hostname="runnervm8k3b6" tests="7" failures="0" errors="0" skipped="0" time="0.006218437">
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; exibe a ação para requires_payment_method" time="0.002241906">
+        </testcase>
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; exibe a ação para requires_action" time="0.000334356">
+        </testcase>
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; oculta a ação para processing" time="0.000220894">
+        </testcase>
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; oculta a ação para succeeded" time="0.000275947">
+        </testcase>
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; oculta a ação para failed" time="0.000194534">
+        </testcase>
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; oculta a ação para canceled" time="0.000302276">
+        </testcase>
+        <testcase classname="src/pages/MyOrders.test.ts" name="retomada de pagamento em meus pedidos &gt; oculta a ação para refunded" time="0.000278921">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/features/auth/api.test.ts" timestamp="2026-10-15T14:45:41.871Z" hostname="runnervm8k3b6" tests="3" failures="0" errors="0" skipped="0" time="0.046149631">
+        <testcase classname="src/features/auth/api.test.ts" name="registerAccount &gt; envia o cadastro exclusivamente por POST" time="0.038973693">
+        </testcase>
+        <testcase classname="src/features/auth/api.test.ts" name="refreshSession &gt; trata a ausência de sessão como estado anônimo, sem erro HTTP" time="0.001654015">
+        </testcase>
+        <testcase classname="src/features/auth/api.test.ts" name="refreshSession &gt; repete a renovação quando outra aba acabou de rotacionar o cookie" time="0.003615516">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/features/checkout/attempt.test.ts" timestamp="2026-10-15T14:45:41.872Z" hostname="runnervm8k3b6" tests="2" failures="0" errors="0" skipped="0" time="0.005870095">
+        <testcase classname="src/features/checkout/attempt.test.ts" name="tentativa de checkout no navegador &gt; aceita somente a página hospedada oficial do Stripe" time="0.001825226">
+        </testcase>
+        <testcase classname="src/features/checkout/attempt.test.ts" name="tentativa de checkout no navegador &gt; gera uma chave diferente para cada decisão de iniciar uma compra" time="0.002483588">
+        </testcase>
+    </testsuite>
+</testsuites>

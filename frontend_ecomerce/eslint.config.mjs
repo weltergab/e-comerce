@@ -8,6 +8,7 @@ const eslintConfig = defineConfig([
     "dist/**",
     "build/**",
     "node_modules/**",
+    "reports/**",
   ]),
   js.configs.recommended,
   ...tseslint.configs.recommended,

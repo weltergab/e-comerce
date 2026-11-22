@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "lerium-shop",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,8 +8,9 @@
     "preview": "vite preview --host 0.0.0.0",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "check": "npm run lint && npm run test && npm run build"
+    "test": "vitest run",
+    "check": "npm run lint && npm run test && npm run build",
+    "test:ci": "vitest run --reporter=default --reporter=junit --reporter=json --outputFile.junit=reports/junit.xml --outputFile.json=reports/tests.json"
   },
   "dependencies": {
     "@sentry/react": "^11.0.0",
@@ -31,7 +32,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.70.1",
-    "vite": "^7.3.0",
-    "vitest": "3.2.7"
+    "vite": "^7.3.8",
+    "vitest": "4.1.11"
   }
 }

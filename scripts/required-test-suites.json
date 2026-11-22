@@ -1,0 +1,22 @@
+{
+  "backend": [
+    "tests/unit/addresses.schemas.test.ts",
+    "tests/unit/auth-session.test.ts",
+    "tests/unit/background-tasks.test.ts",
+    "tests/unit/catalog-sync.schemas.test.ts",
+    "tests/unit/catalog-sync.service.test.ts",
+    "tests/unit/checkout.schemas.test.ts",
+    "tests/unit/checkout.service.test.ts",
+    "tests/unit/env.test.ts",
+    "tests/unit/payment-events.test.ts",
+    "tests/unit/stripe-payment-methods.test.ts",
+    "tests/contract/catalog-sync.database.test.ts",
+    "tests/contract/checkout.contract.test.ts"
+  ],
+  "frontend_ecomerce": [
+    "components/order/OrderStatusBadge.test.ts",
+    "src/features/auth/api.test.ts",
+    "src/features/checkout/attempt.test.ts",
+    "src/pages/MyOrders.test.ts"
+  ]
+}

@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local', quiet: true });
-dotenv.config({ path: '.env', quiet: true });
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config({ path: '.env.local', quiet: true });
+  dotenv.config({ path: '.env', quiet: true });
+}
 
 export interface AppEnv {
   nodeEnv: string;
