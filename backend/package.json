@@ -22,7 +22,7 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.4.0",
+    "multer": "^2.5.0",
     "sharp": "^0.35.4",
     "stripe": "^22.6.2"
   },
@@ -37,6 +37,9 @@
     "vitest": "4.1.11"
   },
   "overrides": {
-    "qs": "^6.16.0"
+    "qs": "^6.16.0",
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    }
   }
 }

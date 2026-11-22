@@ -12,4 +12,6 @@
 
 Responsável: mantenedor do repositório.
 
-A baseline de 15/10/2026 encontrou ainda avisos altos/críticos em sharp, proxy-addr, source-map-js e tinypool; as correções pontuais e os resultados reais estão em `docs/devops-qaops/baseline.md` e nos artefatos do CI. Não há nova exceção ativa. Reavaliar em cada execução, pois o resultado da auditoria depende dos avisos disponíveis na consulta.
+A baseline de 15/10/2026 encontrou ainda avisos altos/críticos em sharp, proxy-addr, source-map-js e tinypool; as correções pontuais e os resultados reais estão em `docs/devops-qaops/baseline.md` e nos artefatos do CI. Não há nova exceção ativa.
+
+Em 22/11/2026, o PR #9 atualizou Multer para 2.5.0, Body Parser para 2.4.0, Zod para 4.6.7 e Vite para 7.3.8. A substituição de Zod é limitada a `@vercel/cli-config` e pode ser removida quando essa dependência passar a resolver uma versão corrigida. Reavaliar em cada execução, pois o resultado da auditoria depende dos avisos disponíveis na consulta.

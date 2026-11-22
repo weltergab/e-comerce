@@ -7,7 +7,7 @@
 - [x] Decisões resumidas em uma linha, documentação atualizada e `arquivo.md` ignorado pelo Git.
 - [ ] Gabriel revisar materiais e evidências, ensaiar e confirmar formato individual/acesso do professor.
 
-[PR #9](https://github.com/weltergab/e-comerce/pull/9) recebe os materiais e o CI do HEAD final; seu check obrigatório `quality-gate` é a fonte do estado atual. O PR permanece aberto para revisão, sem merge automático. Uma aprovação anterior não substitui a validação do último commit. Os três runs comparáveis estão em [experimentos.md](experimentos.md).
+[PR #9](https://github.com/weltergab/e-comerce/pull/9) recebe os materiais e o CI do HEAD final; seu check obrigatório `quality-gate` é a fonte do estado atual. O histórico do PR registra a revisão e a integração. Uma aprovação anterior não substitui a validação do último commit. Os três runs comparáveis estão em [experimentos.md](experimentos.md).
 
 Verificações da aplicação: 64 testes backend, incluindo 8 integrações SQL PGlite, e 17 frontend, com builds, lint e quatro auditorias sem vulnerabilidades nas execuções aprovadas. Três testes adicionais verificam a infraestrutura de gates, sem inflar a contagem da aplicação. Os runners fazem checkout limpo sem credenciais dos provedores, instalando os lockfiles e executando as etapas documentadas.
 

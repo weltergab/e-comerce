@@ -312,6 +312,7 @@ Regras e operação:
 - [x] Parte 3: validar relatórios, isolamento de credenciais, dependências corrigidas e pipeline com agregador obrigatório.
 - [x] Parte 4: preservar três commits/runs de aprovação, mutação e correção na branch de trabalho, com evidências reais.
 - [x] Parte 5: produzir Word de 8 páginas, 10 slides editáveis e roteiro estimado de 11 minutos, revisados tecnicamente.
+- [x] Parte 6: atualizar dependências sinalizadas pela auditoria do PR #9 antes da integração na main.
 - [ ] Revisão humana de Gabriel, confirmação do formato individual e acesso do professor ao repositório privado.
 
 A identidade visual passa a Lerium Shop com logo/favicons SVG e marca compartilhada no cabeçalho/rodapé; contratos internos e infraestrutura existente são preservados. Baseline e decisões estão nos documentos do trabalho. Pendências operacionais e de produção anteriores continuam abertas.
