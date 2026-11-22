@@ -144,7 +144,7 @@ Marcar um item como implementado significa que o comportamento existe no código
 - [x] Backend com TypeScript, testes Vitest e validação da configuração de deploy.
 - [x] Frontend com TypeScript, ESLint, Vitest e build Vite.
 - [x] CI para backend e frontend com `npm ci`, auditoria e `npm run check`.
-- [x] Dependabot semanal separado por projeto.
+- [x] Removida a configuração de atualizações semanais do Dependabot.
 - [x] Testes unitários para tarefas, validação, pagamentos e contratos essenciais de checkout.
 - [x] Testes de frontend para autenticação e apresentação de status do pedido.
 - [ ] Banco efêmero ou isolado em testes de integração.

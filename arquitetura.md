@@ -305,7 +305,7 @@ erDiagram
 
 ```text
 ecomerceReact2/
-├── .github/                         # CI e Dependabot
+├── .github/                         # CI do GitHub Actions
 ├── backend/
 │   ├── api/                         # Entradas Vercel: HTTP e consumidor da fila
 │   ├── database/                    # Schema autoritativo e migrations incrementais
@@ -343,7 +343,6 @@ ecomerceReact2/
 - [x] Backend com compilação TypeScript, testes Vitest e validação do contrato de deploy Vercel.
 - [x] Frontend com ESLint, testes Vitest, typecheck e build Vite.
 - [x] CI separa instalação reprodutível, build/tipos, lint frontend, testes e auditorias; `check` continua sendo a verificação local completa.
-- [x] Dependabot agrupa atualizações semanais separadas para backend e frontend.
 - [x] Métricas administrativas para eventos Stripe falhos, estoque negativo, fulfillment parado, e-mails falhos e divergência de catálogo.
 - [x] Health check administrativo valida banco e Stripe.
 - [x] Testes de catálogo cobrem validação, paginação, vínculo por código, ações direcionais, auditoria e indisponibilidade; testes com PGlite executam a migration em PostgreSQL isolado e validam atomicidade, reservas e privilégios.
