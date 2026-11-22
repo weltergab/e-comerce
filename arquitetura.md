@@ -160,6 +160,7 @@ flowchart LR
 - [x] Cookie de refresh `HttpOnly`, limitado a `/api/auth`; em produção usa `Secure`, `SameSite=None` e `Partitioned` para persistir entre o frontend e a API em sites distintos.
 - [x] Rotas que criam, renovam ou encerram sessão rejeitam `Origin` fora da allowlist e respostas de autenticação usam `Cache-Control: no-store`.
 - [x] Autorização administrativa revalidada no banco por `is_admin`.
+- [x] A opção de visibilidade na edição administrativa atualiza o mesmo status no Stripe e no Supabase. O painel lista produtos ativos e inativos.
 - [x] Validação estrita de checkout, endereço, paginação, produtos e origens de imagem.
 - [x] A edição deixa a galeria intacta quando a lista não muda. URLs novas precisam de uma origem HTTPS autorizada, e a lista editada pode manter URLs antigas já vinculadas ao próprio produto.
 
