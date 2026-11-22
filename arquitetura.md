@@ -161,6 +161,7 @@ flowchart LR
 - [x] Rotas que criam, renovam ou encerram sessão rejeitam `Origin` fora da allowlist e respostas de autenticação usam `Cache-Control: no-store`.
 - [x] Autorização administrativa revalidada no banco por `is_admin`.
 - [x] Validação estrita de checkout, endereço, paginação, produtos e origens de imagem.
+- [x] A edição deixa a galeria intacta quando a lista não muda. URLs novas precisam de uma origem HTTPS autorizada, e a lista editada pode manter URLs antigas já vinculadas ao próprio produto.
 
 ## 4. Checkout, pagamento e estoque
 
@@ -360,4 +361,4 @@ Em 22/11/2026, os lockfiles foram atualizados para corrigir os avisos altos de M
 
 Marca visível: Lerium Shop, logo SVG compartilhada e favicon. O domínio e identificadores técnicos históricos mantêm compatibilidade com os serviços existentes. A documentação detalhada e as decisões em uma linha ficam em `docs/devops-qaops/`; o roteiro privado `arquivo.md` permanece ignorado pelo Git.
 
-O inventário `scripts/required-test-suites.json` impede aprovação caso uma das 16 suítes obrigatórias seja removida, além de conferir descoberta e resultados de novos arquivos. A proteção real da main exige `quality-gate`/strict para todos os autores, preserva branches e não exige segundo integrante fictício. Os três runs aprovado/reprovado/corrigido e o bloqueio observado estão em `experimentos.md`; a mutação de soma foi removida e a versão corrigida aprovou 81 casos. Word, slides e roteiro ficam em `docs/devops-qaops/entregaveis/`, com capturas claramente identificadas como relatórios locais de dados da API/artefatos oficiais.
+O inventário `scripts/required-test-suites.json` impede aprovação caso uma suíte obrigatória seja removida, além de conferir descoberta e resultados de novos arquivos. A proteção real da main exige `quality-gate`/strict para todos os autores, preserva branches e não exige segundo integrante fictício. Os três runs aprovado/reprovado/corrigido e o bloqueio observado estão em `experimentos.md`; a mutação de soma foi removida e a versão corrigida aprovou 81 casos. Word, slides e roteiro ficam em `docs/devops-qaops/entregaveis/`, com capturas claramente identificadas como relatórios locais de dados da API/artefatos oficiais.

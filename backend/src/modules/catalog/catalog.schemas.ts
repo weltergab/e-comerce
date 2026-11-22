@@ -23,12 +23,25 @@ function isAllowedImageUrl(value: string) {
   }
 }
 
-export function parseProductInput(body: unknown, partial = false): Partial<ProductInput> {
+function parseProductImages(value: unknown, existingImages?: readonly string[]) {
+  if (Array.isArray(value) && value.every((image) => typeof image === 'string')) {
+    if (existingImages?.length === value.length && value.every((image, index) => image === existingImages[index])) {
+      return undefined;
+    }
+    if (value.length <= 8 && value.every((image) => existingImages?.includes(image) || isAllowedImageUrl(image))) {
+      return value;
+    }
+  }
+  throw new AppError(400, 'INVALID_PRODUCT_IMAGES', 'Use até 8 imagens. Novas URLs devem usar HTTPS e uma origem autorizada.');
+}
+
+export function parseProductInput(body: unknown, existingImages?: readonly string[]): Partial<ProductInput> {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     throw new AppError(400, 'INVALID_BODY', 'Produto inválido.');
   }
   const value = body as Record<string, unknown>;
   const output: Partial<ProductInput> = {};
+  const partial = existingImages !== undefined;
 
   if (!partial || 'name' in value) {
     if (typeof value.name !== 'string' || !value.name.trim() || value.name.trim().length > 160) {
@@ -59,10 +72,8 @@ export function parseProductInput(body: unknown, partial = false): Partial<Produ
   if ('active' in value) output.active = Boolean(value.active);
   else if (!partial) output.active = true;
   if ('images' in value || !partial) {
-    if (!Array.isArray(value.images) || value.images.length > 8 || value.images.some((image) => typeof image !== 'string' || !isAllowedImageUrl(image))) {
-      throw new AppError(400, 'INVALID_PRODUCT_IMAGES', 'Use até 8 URLs HTTPS de origens autorizadas.');
-    }
-    output.images = value.images as string[];
+    const images = parseProductImages(value.images, existingImages);
+    if (images !== undefined) output.images = images;
   }
   return output;
 }

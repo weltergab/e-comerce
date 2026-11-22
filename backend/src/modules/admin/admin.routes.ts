@@ -50,8 +50,7 @@ adminRoutes.post('/products', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, product: await createProduct(input, req.auth!.userId) });
 }));
 adminRoutes.put('/products/:id', asyncHandler(async (req, res) => {
-  const input = parseProductInput(req.body, true);
-  res.json({ success: true, product: await updateProduct(String(req.params.id), input, req.auth!.userId) });
+  res.json({ success: true, product: await updateProduct(String(req.params.id), req.body, req.auth!.userId) });
 }));
 adminRoutes.delete('/products/:id', asyncHandler(async (req, res) => {
   await archiveProduct(String(req.params.id));

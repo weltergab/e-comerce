@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { db } from '../../db/client';
 import { stripe } from '../../payments/stripe';
 import { AppError } from '../../shared/errors';
-import type { ProductInput } from './catalog.schemas';
+import { parseProductInput, type ProductInput } from './catalog.schemas';
 import { attachProductImages } from './product-images.service';
 
 interface ProductRow {
@@ -134,10 +134,11 @@ export async function createProduct(input: ProductInput, actorId: string) {
   return getAdminProduct(stripeProduct.id);
 }
 
-export async function updateProduct(productId: string, input: Partial<ProductInput>, actorId: string) {
+export async function updateProduct(productId: string, body: unknown, actorId: string) {
   const { data: current, error } = await db().from('products').select('*').eq('id', productId).maybeSingle();
   if (error || !current) throw new AppError(404, 'PRODUCT_NOT_FOUND', 'Produto não encontrado.');
 
+  const input = parseProductInput(body, current.images ?? []);
   let stripePriceId = current.stripe_price_id as string;
   if (input.price !== undefined && Number(current.price) !== input.price) {
     const created = await stripe().prices.create({
