@@ -45,6 +45,7 @@ Marcar um item como implementado significa que o comportamento existe no código
 
 - [x] PostgreSQL como fonte oficial de preço, moeda, disponibilidade e dados exibidos.
 - [x] CRUD administrativo com arquivamento lógico de produto.
+- [x] O administrador pode ativar ou desativar um produto na edição. O catálogo público mostra somente os ativos.
 - [x] Sincronização do produto e preço correspondente no Stripe durante criação e alteração.
 - [x] Novo Price criado e Price anterior desativado quando o valor muda.
 - [x] Catálogo público e administrativo com paginação por cursor.

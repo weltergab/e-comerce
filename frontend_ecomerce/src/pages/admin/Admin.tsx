@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AdminProductCard } from '@/components/admin/AdminProductCard';
 import { AdminDialog, AdminDialogHeader } from '@/components/admin/AdminDialog';
 import { ProductImageManager, ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
@@ -49,6 +50,7 @@ function InventoryStat({ title, value, color, icon }: { title: string; value: nu
 
 export default function AdminPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,6 +79,7 @@ export default function AdminPage() {
           images: p.images || [],
           category: p.category || 'Geral',
           stock: parseInt(p.metadata?.stock || '0'),
+          active: p.active,
         }));
         setProducts(convertedProducts);
       }
@@ -296,6 +299,7 @@ export default function AdminPage() {
           onClose={() => setEditingProduct(null)}
           onSuccess={() => {
             setEditingProduct(null);
+            void queryClient.invalidateQueries({ queryKey: ['products'] });
             loadProducts();
           }}
         />
@@ -314,12 +318,14 @@ function ProductModal({
   onSuccess: () => void;
 }) {
   const originalImages = product?.images?.length ? product.images : product?.image ? [product.image] : [];
+  const originalActive = product?.active ?? true;
   const [formData, setFormData] = useState({
     name: product?.name || '',
     description: product?.description || '',
     price: product?.price?.toString() || '',
     stock: product?.stock?.toString() || '0',
     images: originalImages,
+    active: originalActive,
   });
   const [loading, setLoading] = useState(false);
   const [hasPendingImages, setHasPendingImages] = useState(false);
@@ -338,20 +344,28 @@ function ProductModal({
       const imagesToSave = await imageManagerRef.current?.uploadPendingImages() ?? formData.images;
       const imagesChanged = imagesToSave.length !== originalImages.length
         || imagesToSave.some((image, index) => image !== originalImages[index]);
+      const fields = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock, 10),
+      };
+      const editedFields = product
+        ? Object.fromEntries(Object.entries(fields).filter(([field, value]) => product[field as keyof typeof fields] !== value))
+        : fields;
+      const payload = {
+        ...editedFields,
+        ...(!product || imagesChanged ? { images: imagesToSave } : {}),
+        ...(product && formData.active !== originalActive ? { active: formData.active } : {}),
+      };
 
-      await apiJson(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock),
-          ...(!product || imagesChanged ? { images: imagesToSave } : {}),
-        }),
-      });
+      if (Object.keys(payload).length) {
+        await apiJson(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
 
       alert(product ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
       onSuccess();
@@ -479,6 +493,32 @@ function ProductModal({
                   />
                 </div>
               </div>
+
+              {product && (
+                <label
+                  className="flex items-start gap-3 rounded-lg border p-3"
+                  style={{ borderColor: 'var(--color-borderLight)' }}
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+                    checked={formData.active}
+                    disabled={loading}
+                    aria-labelledby="product-visibility-label"
+                    aria-describedby="product-visibility-help"
+                    onChange={(e) => {
+                      const active = e.target.checked;
+                      setFormData((current) => ({ ...current, active }));
+                    }}
+                  />
+                  <span>
+                    <span id="product-visibility-label" className="block font-semibold">Ativo na vitrine</span>
+                    <span id="product-visibility-help" className="block text-sm" style={{ color: 'var(--color-textMuted)' }}>
+                      Desmarque para ocultar o produto da loja.
+                    </span>
+                  </span>
+                </label>
+              )}
 
               <ProductImageManager
                 ref={imageManagerRef}

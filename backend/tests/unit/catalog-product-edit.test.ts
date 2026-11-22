@@ -25,10 +25,10 @@ const legacyImage = 'https://images.unsplash.com/photo-existing';
 const storageImage = 'https://store.supabase.co/storage/v1/object/public/product-images/photo.webp';
 const fields = { name: 'Novo nome', description: 'Nova descrição', price: 50, stock: 8 };
 
-function catalogProduct(id: string, images: string[]) {
+function catalogProduct(id: string, images: string[], active = true) {
   const product = {
     id, images, name: 'Nome anterior', description: 'Descrição anterior',
-    price: 50, active: true, category: 'Geral', currency: 'brl',
+    price: 50, active, category: 'Geral', currency: 'brl',
     stripe_product_id: 'prod_stripe', stripe_price_id: 'price_original',
   };
   mocks.updateProduct.mockImplementation((values: Partial<typeof product>) => ({
@@ -62,6 +62,19 @@ function catalogProduct(id: string, images: string[]) {
 }
 
 beforeEach(() => vi.clearAllMocks());
+
+describe('visibilidade do produto', () => {
+  it.each([true, false])('salva active=%s no catálogo e no Stripe', async (active) => {
+    catalogProduct('prod_local', [legacyImage], !active);
+
+    await expect(updateProduct('prod_local', { active }, 'admin')).resolves.toMatchObject({
+      active, price: { unit_amount: 5000 }, stock: 8, images: [legacyImage],
+    });
+    expect(mocks.updateStripe).toHaveBeenCalledWith('prod_stripe', { active });
+    expect(mocks.updateProduct).toHaveBeenCalledWith({ active, stripe_price_id: 'price_original' });
+    expect(mocks.attachImages).not.toHaveBeenCalled();
+  });
+});
 
 describe('edição administrativa de produtos com imagens existentes', () => {
   it.each([
