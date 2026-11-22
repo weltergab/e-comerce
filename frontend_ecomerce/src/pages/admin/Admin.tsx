@@ -6,7 +6,7 @@ import { ProductImageManager, ProductImageManagerHandle } from '@/components/adm
 import { Button } from '@/components/ui/Button';
 import { Product } from '@/types';
 import { RefreshCw, Package, CheckCircle, AlertTriangle, Tag, FileText, DollarSign, Box, MessageSquare, Plus, ReceiptText } from 'lucide-react';
-import { apiFetch } from '@/lib/api/client';
+import { apiFetch, apiJson } from '@/lib/api/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface StripeProduct {
@@ -304,7 +304,6 @@ export default function AdminPage() {
   );
 }
 
-// Product Modal Component (mantido igual)
 function ProductModal({
   product,
   onClose,
@@ -314,12 +313,13 @@ function ProductModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const originalImages = product?.images?.length ? product.images : product?.image ? [product.image] : [];
   const [formData, setFormData] = useState({
     name: product?.name || '',
     description: product?.description || '',
     price: product?.price?.toString() || '',
     stock: product?.stock?.toString() || '0',
-    images: product?.images?.length ? product.images : product?.image ? [product.image] : [],
+    images: originalImages,
   });
   const [loading, setLoading] = useState(false);
   const [hasPendingImages, setHasPendingImages] = useState(false);
@@ -335,10 +335,11 @@ function ProductModal({
     const method = product ? 'PUT' : 'POST';
 
     try {
-      const uploadedImages = await imageManagerRef.current?.uploadPendingImages();
-      const imagesToSave = uploadedImages || formData.images;
+      const imagesToSave = await imageManagerRef.current?.uploadPendingImages() ?? formData.images;
+      const imagesChanged = imagesToSave.length !== originalImages.length
+        || imagesToSave.some((image, index) => image !== originalImages[index]);
 
-      const response = await apiFetch(url, {
+      await apiJson(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -348,21 +349,12 @@ function ProductModal({
           description: formData.description,
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
-          images: imagesToSave,
+          ...(!product || imagesChanged ? { images: imagesToSave } : {}),
         }),
       });
 
-      if (response.ok) {
-        alert(
-          product
-            ? 'Produto atualizado com sucesso!'
-            : 'Produto criado com sucesso!'
-        );
-        onSuccess();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Erro ao salvar produto');
-      }
+      alert(product ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
+      onSuccess();
     } catch (error: unknown) {
       console.error('Error saving product:', error);
       alert(error instanceof Error ? error.message : 'Erro ao salvar produto');

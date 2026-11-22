@@ -52,6 +52,7 @@ Marcar um item como implementado significa que o comportamento existe no código
 - [x] Validação real do arquivo, correção de orientação, redimensionamento e conversão para WebP.
 - [x] Bucket público limitado a WebP de até 2 MiB.
 - [x] Allowlist HTTPS para imagens externas cadastradas em produto.
+- [x] A edição preserva imagens antigas do próprio produto e exige uma origem autorizada para novas URLs.
 - [x] Rastreamento de imagem pendente/anexada e limpeza assíncrona de órfãs.
 - [x] Conteúdo da introdução editável pelo administrador, com fallback seguro.
 - [x] Script de importação inicial do catálogo Stripe para o banco.

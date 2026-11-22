@@ -3,6 +3,7 @@
     "tests/unit/addresses.schemas.test.ts",
     "tests/unit/auth-session.test.ts",
     "tests/unit/background-tasks.test.ts",
+    "tests/unit/catalog-product-edit.test.ts",
     "tests/unit/catalog-sync.schemas.test.ts",
     "tests/unit/catalog-sync.service.test.ts",
     "tests/unit/checkout.schemas.test.ts",
