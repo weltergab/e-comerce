@@ -2,8 +2,6 @@
 
 Aplicação React/Vite com API Express modular, catálogo/pedidos/estoque no Postgres (Supabase) e pagamentos no Stripe.
 
-Os diagramas do sistema, banco de dados e organização de pastas estão em [`arquitetura.md`](./arquitetura.md).
-
 ## Preparação local
 
 1. Copie `backend/.env.example` para `backend/.env.local` e `frontend_ecomerce/.env.example` para `frontend_ecomerce/.env.local`.
@@ -41,12 +39,3 @@ Os testes automatizados funcionam sem `.env.local`, Supabase, Stripe ou credenci
 Nos dois diretórios, execute também `npm audit --omit=dev --audit-level=high` e `npm audit --audit-level=high`. No diretório raiz, `node --test scripts/ci.test.mjs` verifica as regras do agregador e dos relatórios. O backend valida tipos e configuração Vercel; seu build não gera um bundle. O CI executa as etapas separadamente e não repete a suíte por meio de check.
 
 O workflow [CI](.github/workflows/ci.yml) executa em pull requests e pushes na main, usa Node 22, publica relatórios mesmo após falha e exige sucesso dos dois projetos, inclusive seus artefatos, no job `quality-gate`. Erros de build/lint/testes, relatórios ausentes ou vulnerabilidades altas/críticas em qualquer dependência bloqueiam. O acionamento manual é suplementar. A integração com o deploy da Vercel precisa de validação própria.
-
-## Trabalho DevOps e QAOps
-
-- [Caracterização e acessos](docs/devops-qaops/caracterizacao.md), [baseline](docs/devops-qaops/baseline.md) e [estratégia de testes](docs/devops-qaops/estrategia-testes.md).
-- [Quality gates](docs/devops-qaops/quality-gates.md), [decisões em uma linha](docs/devops-qaops/decisoes.md) e [contribuições/revisão individual](docs/devops-qaops/contribuicoes.md).
-- [Experimentos e links](docs/devops-qaops/experimentos.md), [análise crítica](docs/devops-qaops/analise-critica.md) e [fontes](docs/devops-qaops/referencias.md).
-- [Relatório Word](docs/devops-qaops/entregaveis/relatorio-tecnico.docx), [slides editáveis](docs/devops-qaops/entregaveis/slides.pptx) e [roteiro de apresentação](docs/devops-qaops/entregaveis/roteiro-apresentacao.md).
-
-A marca e logo exibidas são **Lerium Shop**. O domínio existente `https://storecy.vercel.app`, cookies, fila, JWT e chave de carrinho mantêm os identificadores históricos para compatibilidade. Conteúdo introdutório salvo com a marca antiga é normalizado na leitura da interface, sem modificar o banco remoto. `arquivo.md` é um checklist local ignorado e não integra os commits.
